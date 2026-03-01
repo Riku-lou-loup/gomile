@@ -7,7 +7,7 @@ default:
   image: node:22
   before_script:
     - corepack enable
-    - corepack prepare pnpm --activate
+    - corepack prepare pnpm@10.30.3 --activate
     - pnpm config set store-dir .pnpm-store
     - pnpm install --frozen-lockfile=false
   cache:
@@ -41,7 +41,7 @@ typecheck:
 test_api:
   stage: validate
   script:
-    - pnpm --filter api test -- --ci --passWithNoTests
+    - pnpm --filter api test:ci
 
 build_web:
   stage: build

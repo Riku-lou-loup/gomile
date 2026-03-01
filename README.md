@@ -27,13 +27,26 @@ GoMile est un dépôt multi-applications qui contient :
 ## Prérequis
 
 - Node.js 22 LTS (recommandé)
-- pnpm
 - Docker + Docker Compose (pour Postgres/Redis en local)
+
+## Gestionnaire de paquets (Corepack + pnpm)
+
+Le dépôt fixe la version de pnpm dans `package.json` (`packageManager`).
+Utilisez Corepack pour que toute l'équipe et la CI utilisent la même version.
+
+```bash
+# Active Corepack (à faire une seule fois sur la machine)
+corepack enable
+
+# Active explicitement la version pnpm du projet (optionnel, mais recommandé)
+corepack prepare pnpm@10.30.3 --activate
+```
 
 ## Installer les dépendances
 
 ```bash
 # Installe toutes les dépendances du monorepo (apps + packages)
+# avec la version pnpm définie dans packageManager
 pnpm install
 ```
 
@@ -95,6 +108,16 @@ pnpm typecheck
 ```
 
 Le `pnpm dev` à la racine suppose que chaque workspace expose un script `dev`. Ce n'est pas encore le cas pour toutes les apps, donc privilégiez les commandes par application ci-dessus.
+
+## Tests
+
+```bash
+# Lance les tests API en local
+pnpm --filter api test
+
+# Lance les tests API en mode CI (compatible même s'il n'y a pas de tests)
+pnpm --filter api test:ci
+```
 
 ## Base de données API (Prisma)
 
