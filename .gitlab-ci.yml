@@ -1,0 +1,76 @@
+stages:
+  - validate
+  - build
+  - security
+
+default:
+  image: node:22
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm --activate
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile=false
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .pnpm-store/
+      - node_modules/
+      - apps/web/node_modules/
+      - apps/api/node_modules/
+      - apps/mobile/node_modules/
+    policy: pull-push
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+variables:
+  EXPO_NO_TELEMETRY: "1"
+
+lint:
+  stage: validate
+  script:
+    - pnpm -r lint
+
+typecheck:
+  stage: validate
+  script:
+    - pnpm -r typecheck
+
+test_api:
+  stage: validate
+  script:
+    - pnpm --filter api test -- --ci --passWithNoTests
+
+build_web:
+  stage: build
+  script:
+    - pnpm --filter web build
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - apps/web/.next/
+
+build_api:
+  stage: build
+  script:
+    - pnpm --filter api build
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - apps/api/dist
+
+mobile_check:
+  stage: build
+  script:
+    - EXPO_NO_TELEMETRY=1 pnpm --filter mobile lint || true
+    - pnpm --filter mobile typecheck
+
+audit:
+  stage: security
+  script:
+    - pnpm audit --prod || true
+  allow_failure: true
