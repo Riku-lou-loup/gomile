@@ -38,7 +38,7 @@ Utilisez Corepack pour que toute l'équipe et la CI utilisent la même version.
 # Active Corepack (à faire une seule fois sur la machine)
 corepack enable
 
-# Active explicitement la version pnpm du projet (optionnel, mais recommandé)
+# Active explicitement la version pnpm du projet
 corepack prepare pnpm@10.30.3 --activate
 ```
 
@@ -63,12 +63,18 @@ Cela démarre :
 
 ## Configuration d'environnement
 
-Créer `apps/api/.env` avec :
+Créer le fichier local à partir du template versionné :
 
-```env
-DATABASE_URL="postgresql://gomile:gomile@localhost:5432/gomile?schema=public"
-PORT=3000
+```bash
+# Copie le template et crée ton fichier env local
+cp apps/api/.env.example apps/api/.env
 ```
+
+Ensuite, adapte les valeurs de `apps/api/.env` si nécessaire.
+
+Important :
+- `apps/api/.env.example` est commité (template partagé).
+- `apps/api/.env` reste local
 
 ## Lancer les applications
 
@@ -138,4 +144,18 @@ pnpm --filter api exec prisma migrate dev
 # - ne modifie pas la base de donnees
 # - met a jour le client genere dans apps/api/generated/prisma
 pnpm --filter api exec prisma generate
+```
+
+## Vérification
+
+```bash
+# Vérifie la version de pnpm utilisée par Corepack
+pnpm -v
+
+# Vérifie que Postgres et Redis tournent
+docker compose -f infra/docker-compose.yml ps
+
+# Relance proprement les services locaux
+docker compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml up -d
 ```
