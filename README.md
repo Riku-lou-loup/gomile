@@ -38,7 +38,7 @@ Utilisez Corepack pour que toute l'équipe et la CI utilisent la même version.
 # Active Corepack (à faire une seule fois sur la machine)
 corepack enable
 
-# Active explicitement la version pnpm du projet (optionnel, mais recommandé)
+# Active explicitement la version pnpm du projet
 corepack prepare pnpm@10.30.3 --activate
 ```
 
