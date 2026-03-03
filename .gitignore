@@ -38,3 +38,6 @@ Thumbs.db
 
 # Local planning/state files
 local/
+pnpm-lock.yaml
+apps/api/prisma/migrations/migration_lock.toml
+pnpm-lock.yaml
