@@ -1,0 +1,31 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy, StrategyOptionsWithRequest } from 'passport-jwt';
+import { Request } from 'express';
+import { PrismaService } from '../../prisma/prisma.service';
+
+@Injectable()
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+  constructor(private prisma: PrismaService) {
+    const options: StrategyOptionsWithRequest = {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_REFRESH_SECRET as string,
+      passReqToCallback: true,
+    };
+    super(options);
+  }
+
+  async validate(req: Request, payload: { sub: string }) {
+    const refreshToken = req.headers.authorization?.split(' ')[1];
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user || user.refreshToken !== refreshToken) {
+      throw new UnauthorizedException();
+    }
+
+    return user;
+  }
+}
