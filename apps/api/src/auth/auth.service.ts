@@ -7,9 +7,11 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
 import { RegisterDriverDto } from './dto/register-driver.dto';
 import { LoginDto } from './dto/login.dto';
+import { AuthResponse } from './auth.types';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async registerMerchant(dto: RegisterMerchantDto) {
+  async registerMerchant(dto: RegisterMerchantDto): Promise<AuthResponse> {
     await this.checkEmailAvailable(dto.email);
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
@@ -36,7 +38,7 @@ export class AuthService {
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
-  async registerDriver(dto: RegisterDriverDto) {
+  async registerDriver(dto: RegisterDriverDto): Promise<AuthResponse> {
     await this.checkEmailAvailable(dto.email);
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
@@ -57,7 +59,7 @@ export class AuthService {
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -71,7 +73,11 @@ export class AuthService {
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
-  async refresh(userId: string, email: string, role: Role) {
+  async refresh(
+    userId: string,
+    email: string,
+    role: Role,
+  ): Promise<AuthResponse> {
     return this.generateAndSaveTokens(userId, email, role);
   }
 
@@ -92,17 +98,19 @@ export class AuthService {
     userId: string,
     email: string,
     role: Role,
-  ) {
+  ): Promise<AuthResponse> {
     const payload = { sub: userId, email, role };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: process.env.JWT_ACCESS_SECRET,
         expiresIn: '15m',
+        jwtid: randomUUID(),
       }),
       this.jwtService.signAsync(payload, {
         secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '7d',
+        jwtid: randomUUID(),
       }),
     ]);
 
@@ -111,6 +119,10 @@ export class AuthService {
       data: { refreshToken },
     });
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken,
+      refreshToken,
+      user: { id: userId, email, role },
+    };
   }
 }
