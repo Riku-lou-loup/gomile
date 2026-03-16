@@ -1,0 +1,73 @@
+/* ─── Google Fonts ─────────────────────────────────────── */
+/* On importe les fonts que l'on va utiliser pour le site web depuis google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+@import "tailwindcss";
+
+
+
+/* La hiérarchie des fonts à utiliser au cas où celle souhaitée n'est pas disponible */
+@layer base {
+    html {
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+}
+
+
+/* ─── GoMile Design Tokens ─────────────────────────────── */
+/* Création des différentes variables utiles pour la réalisation de la maquette */
+@theme {
+
+  /* Couleurs principales */
+  --color-primary:        #2B5E2B;   /* Vert foncé  — navbar, accents forts  */
+  --color-primary-light:  #3D8B3D;   /* Vert moyen  — boutons, hover          */
+  --color-primary-hover:  #2F6E2F;   /* Vert hover  — état hover des boutons  */
+  --color-bg:             #EEF5EE;   /* Vert pâle   — fond de page            */
+  --color-bg-card:        #FFFFFF;   /* Blanc       — fond des cartes         */
+  --color-text:           #1A2E1A;   /* Vert très foncé — texte principal     */
+  --color-text-muted:     #5A7A5A;   /* Vert grisé  — texte secondaire        */
+  --color-border:         #C8DEC8;   /* Vert clair  — bordures, séparateurs   */
+  --color-footer-bg:      #3B82F6;   /* Bleu clair — fond footer         */
+  --color-footer-text:    #ffffff;   /* Vert pâle   — texte footer            */
+
+  /* Typographie */
+  --font-display: 'Roboto', sans-serif;   /* Titres uppercase bold  */
+  --font-body:    'Inter', sans-serif;    /* Corps de texte         */
+
+  /* Espacements custom */
+  --spacing-18:  4.5rem;
+  --spacing-22:  5.5rem;
+
+  /* Rayons */
+  --radius-card: 1rem;
+  --radius-btn:  0.5rem;
+
+  /* Ombres */
+  --shadow-card: 0 4px 24px 0 rgba(43, 94, 43, 0.10);
+  --shadow-btn:  0 2px 8px 0 rgba(43, 94, 43, 0.20);
+}
+
+/* ─── Reset & base ─────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Utilitaires typographiques ───────────────────────── */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+
