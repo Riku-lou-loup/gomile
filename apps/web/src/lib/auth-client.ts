@@ -1,34 +1,23 @@
+import type {
+  AuthSession,
+  AuthUser,
+  LoginInput,
+  LogoutResponse,
+  RegisterDriverInput,
+  RegisterMerchantInput,
+  Role,
+} from "../../../../shared/auth-contracts";
 import type { ApiErrorPayload } from "../../../../shared/api-errors";
 
-export type Role = "ADMIN" | "DRIVER" | "CUSTOMER" | "MERCHANT";
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: Role;
-}
-
-export interface AuthSession {
-  user: AuthUser;
-}
-
-export interface RegisterMerchantInput {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface RegisterDriverInput {
-  email: string;
-  password: string;
-  name: string;
-  phone: string;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
+export type {
+  AuthSession,
+  AuthUser,
+  LoginInput,
+  LogoutResponse,
+  RegisterDriverInput,
+  RegisterMerchantInput,
+  Role,
+};
 
 async function parseError(response: Response) {
   const contentType = response.headers.get("content-type");
@@ -101,7 +90,7 @@ export function refreshSession() {
 
 // Clears the backend session and removes auth cookies via the BFF.
 export function logout() {
-  return requestAuth<{ message: string }>("/api/auth/logout", {
+  return requestAuth<LogoutResponse>("/api/auth/logout", {
     method: "POST",
   });
 }
