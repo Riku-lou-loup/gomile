@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { AUTH_MESSAGES } from '../../../../../shared/auth-messages';
+import { AUTH_MESSAGES } from '../auth-messages';
 
 export class AuthenticatedUserDto {
   @ApiProperty({
