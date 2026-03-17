@@ -42,6 +42,7 @@ async function parseError(response: Response) {
   if (contentType?.includes("application/json")) {
     const payload = (await response.json()) as Partial<ApiErrorPayload>;
     return payload.message ?? payload.code ?? fallbackError.message;
+    return payload.message ?? payload.code ?? fallbackError.message;
   }
 
   const text = await response.text();
@@ -97,7 +98,6 @@ export type {
   Role,
 };
 
-// For my dear friend Ousmane, here is your async functions for front end
 // Registers a merchant account, stores issued tokens, and returns the authenticated user.
 export async function registerMerchant(input: RegisterMerchantInput) {
   const response = await requestApi<AuthTokensResponse>(
@@ -160,6 +160,7 @@ export async function logout(): Promise<LogoutResponse> {
 
   if (!tokens?.accessToken) {
     await getAuthTokenStore().clearTokens();
+    return { message: AUTH_MESSAGES.ALREADY_LOGGED_OUT };
     return { message: AUTH_MESSAGES.ALREADY_LOGGED_OUT };
   }
 
