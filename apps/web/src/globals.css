@@ -19,11 +19,11 @@
 @theme {
 
   /* Couleurs principales */
-  --color-primary:        #2B5E2B;   /* Vert foncé  — navbar, accents forts  */
+  --color-primary:        #0FB12A;   /* Vert foncé  — navbar, accents forts  */
   --color-primary-light:  #3D8B3D;   /* Vert moyen  — boutons, hover          */
   --color-primary-hover:  #2F6E2F;   /* Vert hover  — état hover des boutons  */
   --color-bg:             #EEF5EE;   /* Vert pâle   — fond de page            */
-  --color-bg-card:        #FFFFFF;   /* Blanc       — fond des cartes         */
+  --color-bg-card:        #FFFFCC;   /* Blanc       — fond des cartes         */
   --color-text:           #1A2E1A;   /* Vert très foncé — texte principal     */
   --color-text-muted:     #5A7A5A;   /* Vert grisé  — texte secondaire        */
   --color-border:         #C8DEC8;   /* Vert clair  — bordures, séparateurs   */
@@ -70,4 +70,5 @@ body {
   font-family: var(--font-body);
 }
 
+/* ─── Images ───────────────────────── */
 

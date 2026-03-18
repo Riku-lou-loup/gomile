@@ -1,26 +1,74 @@
-import React from 'react';
-import clsx from 'clsx';
+// src/components/ui/Typography.tsx
+import React from 'react'
+import clsx from 'clsx'
 
 interface Props {
-    variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
-    weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
-    theme?: 'black' | 'white' | 'grey' | 'primary' | 'secondary' | 'tertiary';
-    component?: React.ElementType;
-    children: React.ReactNode;
+  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
+  weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
+  theme?: 'black' | 'white' | 'grey' | 'primary' | 'secondary' | 'tertiary'
+  Component?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
+  children: React.ReactNode
+  className?: string
 }
 
-export const Typography = ({
-    variant = 'p',
-    weight = 'normal',
-    theme = 'black',
-    component: Component = "div",
-    children,
-}: Props) => {
-    let variantStyles: string;
+const variantClasses: Record<NonNullable<Props['variant']>, string> = {
+  h1: 'font-display text-5xl leading-tight',
+  h2: 'font-display text-4xl leading-tight',
+  h3: 'font-display text-3xl leading-snug',
+  h4: 'font-display text-2xl leading-snug',
+  h5: 'font-display text-xl leading-normal',
+  h6: 'font-display text-lg leading-normal',
+  p:  'font-body text-base leading-relaxed',
+  span: 'font-body text-base leading-normal',
+}
 
-    switch (variant) {
-        case 'h1':
+const weightClasses: Record<NonNullable<Props['weight']>, string> = {
+  light:    'font-light',
+  normal:   'font-normal',
+  medium:   'font-medium',
+  semibold: 'font-semibold',
+  bold:     'font-bold',
+}
 
-    }
-    return <Component className={clsx(variantStyles)}>{children}</Component>;
+const themeClasses: Record<NonNullable<Props['theme']>, string> = {
+  black:     'text-text',
+  white:     'text-white',
+  grey:      'text-text-muted',
+  primary:   'text-primary',
+  secondary: 'text-primary-light',
+  tertiary:  'text-primary-hover',
+}
+
+export default function Typography({
+  variant = 'p',
+  weight,
+  theme = 'black',
+  Component = 'p',
+  children,
+  className = '',
+}: Props) {
+
+  const defaultWeight: Record<NonNullable<Props['variant']>, string> = {
+    h1: 'font-bold',
+    h2: 'font-bold',
+    h3: 'font-bold',
+    h4: 'font-semibold',
+    h5: 'font-semibold',
+    h6: 'font-medium',
+    p:  'font-normal',
+    span: 'font-normal',
+  }
+
+  return (
+    <Component
+      className={clsx(
+        variantClasses[variant],
+        weight ? weightClasses[weight] : defaultWeight[variant],
+        themeClasses[theme],
+        className,
+      )}
+    >
+      {children}
+    </Component>
+  )
 }
