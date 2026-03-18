@@ -1,24 +1,50 @@
 // app/page.tsx
 import Button from "@/components/ui/design-system/button/button";
 import Footer from "@/components/ui/design-system/header_footer/footer";
+import Container from "@/components/ui/elements/container";
+import {Navigation} from "@/components/ui/navigation/navigation";
+import Typography from "@/components/ui/design-system/typography";
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-bg">
- 
-      {/* Contenu fictif pour pousser le footer en bas */}
-      <main className="flex-1 flex items-center justify-center px-10">
-        <Button>Bouton</Button>
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-3">Footer — Test</h1>
-          <p className="text-text-muted font-body">
-            Le footer est affiché en bas de la page.
-          </p>
+    <div className="flex flex-col h-screen w-full bg-cover bg-center" style={{ backgroundImage: "url('../images/bg.png')" }}>
+      <Navigation />
+
+      <main className="flex flex-1 flex-col p-6 items-center justify-center">
+
+        <div className="flex flex-col w-250 h-150 bg-bg-card mx-auto gap-3 items-center justify-center p-2 rounded-card shadow-lg border-2 border-gray-200">
+          
+          <Typography variant="h1" weight="bold" theme="black" className="text-center">Bienvenue sur GoMile</Typography>
+          
+          <div className="flex-1 flex gap-5 w-full">
+            
+            <Container className="flex-1 flex flex-col gap-2 items-center justify-center bg-white rounded-card shadow border-2 border-gray-200" fullwidth={true}>
+              <div className="flex flex-col">
+                <Typography variant="h4" weight="bold" theme="black" className="text-center">Je suis un commerçant</Typography>
+                <Typography variant="span" theme="black" className="text-center">Gérez vos livraisons en toute simplicité avec GoMile, votre partenaire de confiance pour une logistique efficace et sans stress.</Typography>
+              </div>
+              <div className="w-64 h-64 bg-cover bg-center" style={{ backgroundImage: "url('../images/commercant.png')" }}></div>
+              <Button variant="filled" size="md">Je m'inscris</Button>
+              <Button variant="filled" size="md">Je me connecte</Button>
+            </Container>
+            
+            <Container className="flex-1 flex flex-col gap-2 items-center justify-center bg-white rounded-card shadow border-2 border-gray-200" fullwidth={true}>
+              <div className="flex flex-col">
+                <Typography variant="h4" weight="bold" theme="black" className="text-center">Je suis un livreur</Typography>
+                <Typography variant="span" theme="black" className="text-center">Devenez votre propre patron et livrez quand vous voulez</Typography>
+              </div>
+              <div className="w-64 h-64 bg-cover bg-center" style={{ backgroundImage: "url('../images/livreur.png')" }}></div>
+              <Button variant="filled" size="md">Je m'inscris</Button>
+              <Button variant="filled" size="md">Je me connecte</Button>
+            </Container>
+          
+          </div>
+        
         </div>
+      
       </main>
- 
-      {/* Footer */}
+
+
       <Footer />
- 
     </div>
   );
 }
