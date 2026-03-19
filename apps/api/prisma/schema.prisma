@@ -34,6 +34,12 @@ enum WalletEntryType {
   DEBIT
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  UNDEFINED
+}
+
 enum OrderStatus {
   SEARCHING_DRIVER
   DRIVER_ASSIGNED
@@ -120,10 +126,16 @@ model Order {
 
 // A driver can have many orders, KYC submissions and a wallet
 model Driver {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @unique @db.Uuid
-  name      String
-  phone     String
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @db.Uuid
+  firstName   String
+  lastName    String
+  avatarUrl   String
+  phone       String
+  gender      Gender
+  dateOfBirth DateTime
+  address     String
+
   kycStatus KycStatus @default(PENDING)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -155,6 +167,9 @@ model KycSubmission {
   id       String    @id @default(uuid()) @db.Uuid
   driverId String    @db.Uuid
   status   KycStatus @default(PENDING)
+
+  documentUrl     String
+  rejectionReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
