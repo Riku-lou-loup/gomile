@@ -1,5 +1,2 @@
--- AlterEnum
-ALTER TYPE "KycStatus" ADD VALUE 'NOT_SUBMITTED';
-
 -- AlterTable
 ALTER TABLE "Driver" ALTER COLUMN "kycStatus" SET DEFAULT 'NOT_SUBMITTED';
