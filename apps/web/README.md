@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GoMile Web (`apps/web`)
 
-## Getting Started
+Application web Next.js (App Router) avec une couche BFF via `route.ts`.
 
-First, run the development server:
+## Périmètre
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Interface frontend web
+- Endpoints Next côté web (`src/app/api/**/route.ts`)
+- Proxy des appels vers le backend Nest
+
+## Structure
+
+```text
+apps/web
+├── src/app/                 # pages App Router + routes API
+│   ├── api/                 # endpoints BFF
+│   └── ...
+├── src/lib/backend-proxy.ts # utilitaire de proxy partagé
+└── public/                  # assets statiques
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environnement
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Créer `apps/web/.env.local` :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+API_BASE_URL=http://localhost:3000
+```
 
-## Learn More
+`API_BASE_URL` doit pointer vers l'API Nest.
 
-To learn more about Next.js, take a look at the following resources:
+## Lancer l'application
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm --filter web dev -- --port 3001
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Routes BFF disponibles
 
-## Deploy on Vercel
+Implémentées dans `src/app/api/**/route.ts` :
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `GET /api/health`
+- `POST /api/order`
+- `POST /api/accept_order`
+- `POST /api/handshake/a`
+- `POST /api/handshake/b`
+- `PUT /api/livreurs/:id/kyc-approve`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ces routes relaient les requêtes vers Nest via `src/lib/backend-proxy.ts`.
+
+## Vérifications
+
+```bash
+pnpm --filter web lint
+pnpm --filter web typecheck
+pnpm --filter web build
+```
