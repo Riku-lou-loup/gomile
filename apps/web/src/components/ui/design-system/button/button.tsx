@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 import clsx from 'clsx'
 
 type ButtonVariant = 'filled' | 'outline' | 'ghost'
