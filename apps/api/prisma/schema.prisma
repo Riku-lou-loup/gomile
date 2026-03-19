@@ -24,10 +24,10 @@ enum Role {
 }
 
 enum KycStatus {
-  NOT_SUBMITTED
   PENDING
   ACCEPTED
   REJECTED
+  NOT_SUBMITTED
 }
 
 enum WalletEntryType {
