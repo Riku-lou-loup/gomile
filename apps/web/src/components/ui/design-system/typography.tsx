@@ -39,7 +39,7 @@ const themeClasses: Record<NonNullable<Props['theme']>, string> = {
   tertiary:  'text-primary-hover',
 }
 
-export default function Typography({
+export function Typography({
   variant = 'p',
   weight,
   theme = 'black',
@@ -72,3 +72,5 @@ export default function Typography({
     </Component>
   )
 }
+
+export default Typography
