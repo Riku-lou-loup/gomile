@@ -3,12 +3,13 @@ import React from 'react'
 import clsx from 'clsx'
 
 interface Props {
-  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
-  weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
-  theme?: 'black' | 'white' | 'grey' | 'primary' | 'secondary' | 'tertiary'
-  Component?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
-  children: React.ReactNode
-  className?: string
+  variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
+  weight?: "light" | "normal" | "medium" | "semibold" | "bold";
+  theme?: "black" | "white" | "grey" | "primary" | "secondary" | "tertiary" | "heading" | "body" | "bodyStrong" | "link"
+    | "danger" | "success";
+  Component?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
+  children: React.ReactNode;
+  className?: string;
 }
 
 const variantClasses: Record<NonNullable<Props['variant']>, string> = {
@@ -37,6 +38,12 @@ const themeClasses: Record<NonNullable<Props['theme']>, string> = {
   primary:   'text-primary',
   secondary: 'text-primary-light',
   tertiary:  'text-primary-hover',
+  heading:   'text-heading',
+  body:      'text-body',
+  bodyStrong: 'text-body-strong',
+  link:      'text-link',
+  danger:    'text-danger',
+  success:   'text-success',
 }
 
 export function Typography({
