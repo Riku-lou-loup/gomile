@@ -1,0 +1,202 @@
+import { cn, styles } from "@/app/merchant/dashboard/style";
+import Typography from "@/components/ui/design-system/typography";
+import { DeliveryItem, DeliveryStatus } from "@/dummiesData/activeDeliveries";
+import ClockIcon from "../ui/icons/ClockIcon";
+import CheckIcon from "../ui/icons/CheckIcon";
+import DynamicTable, { DynamicTableColumn } from "../ui/design-system/table/dynamic-table";
+
+
+
+type StatusBadgeProps = {
+  status: DeliveryStatus;
+  isDarkMode: boolean;
+};
+
+function StatusBadge({ status, isDarkMode }: StatusBadgeProps) {
+  const isLate = status === "En retard";
+
+  return (
+    <span
+      className={cn(
+        styles.statusBadge,
+        isLate
+          ? isDarkMode
+            ? styles.statusLateDark
+            : styles.statusLateLight
+          : isDarkMode
+            ? styles.statusOnTimeDark
+            : styles.statusOnTimeLight,
+      )}
+    >
+      <span className={isLate ? styles.statusLateIcon : styles.statusOnTimeIcon}>
+        {isLate ? (
+          <ClockIcon className={styles.iconMedium} />
+        ) : (
+          <CheckIcon className={styles.iconMedium} />
+        )}
+      </span>
+
+      <Typography
+        variant="span"
+        Component="span"
+        weight="semibold"
+        className="!text-inherit"
+      >
+        {status}
+      </Typography>
+    </span>
+  );
+}
+
+type ActiveDeliveriesProps = {
+  deliveries: DeliveryItem[];
+  isDarkMode: boolean;
+};
+
+export default function ActiveDeliveries({
+  deliveries,
+  isDarkMode,
+}: ActiveDeliveriesProps) {
+  const columns: DynamicTableColumn<DeliveryItem>[] = [
+    {
+      key: "id",
+      header: "ID",
+      cellClassName: styles.deliveryIdentity,
+      render: (delivery) => (
+        <>
+          <div className={cn(styles.deliveryAvatar, delivery.avatarClass)}>
+            <Typography
+              variant="span"
+              Component="span"
+              weight="bold"
+              className="text-sm !text-inherit"
+            >
+              {delivery.initials}
+            </Typography>
+          </div>
+
+          <Typography
+            variant="span"
+            Component="span"
+            weight="bold"
+            theme={isDarkMode ? "white" : "heading"}
+            className={styles.deliveryId}
+          >
+            {delivery.id}
+          </Typography>
+        </>
+      ),
+    },
+    {
+      key: "destination",
+      header: "Destination",
+      cellClassName: styles.deliveryDestination,
+      render: (delivery) => (
+        <Typography
+          variant="span"
+          Component="span"
+          weight="medium"
+          theme={isDarkMode ? "white" : "black"}
+          className="!text-inherit"
+        >
+          {delivery.destination}
+        </Typography>
+      ),
+    },
+    {
+      key: "status",
+      header: "Statut",
+      cellClassName: styles.deliveryStatusWrap,
+      render: (delivery) => (
+        <StatusBadge
+          status={delivery.status}
+          isDarkMode={isDarkMode}
+        />
+      ),
+    },
+    {
+      key: "eta",
+      header: "Heure prevue",
+      cellClassName: styles.deliveryEtaWrap,
+      render: (delivery) => (
+        <div>
+          <Typography
+            variant="span"
+            Component="span"
+            weight="semibold"
+            theme={isDarkMode ? "white" : "black"}
+            className="!text-inherit"
+          >
+            {delivery.eta}
+          </Typography>
+
+          {delivery.note ? (
+            <Typography
+              variant="span"
+              Component="span"
+              weight="medium"
+              className={
+                isDarkMode
+                  ? styles.deliveryNoteDark
+                  : styles.deliveryNoteLight
+              }
+            >
+              {delivery.note}
+            </Typography>
+          ) : null}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <section
+      className={cn(
+        styles.deliveriesSection,
+        isDarkMode
+          ? styles.deliveriesSectionDark
+          : styles.deliveriesSectionLight,
+      )}
+    >
+      <div
+        className={cn(
+          styles.deliveriesHeader,
+          isDarkMode
+            ? styles.deliveriesHeaderDark
+            : styles.deliveriesHeaderLight,
+        )}
+      >
+        <Typography
+          variant="h3"
+          Component="h3"
+          theme={isDarkMode ? "white" : "heading"}
+          className={styles.sectionTitle}
+        >
+          Liste des livraisons actives
+        </Typography>
+      </div>
+
+      <div className={styles.tableOverflow}>
+        <div className={styles.deliveriesTableMin}>
+          <DynamicTable
+            columns={columns}
+            rows={deliveries}
+            gridTemplateColumns="8rem 1.4fr 1.1fr 1fr"
+            headerRowClassName={cn(
+              styles.deliveriesTableHead,
+              isDarkMode
+                ? styles.deliveriesTableHeadDark
+                : styles.deliveriesTableHeadLight,
+            )}
+            bodyClassName={
+              isDarkMode
+                ? styles.deliveriesDividerDark
+                : styles.deliveriesDividerLight
+            }
+            rowClassName={styles.deliveryRow}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
