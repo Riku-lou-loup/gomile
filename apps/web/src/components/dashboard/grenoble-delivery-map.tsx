@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-export type DeliveryMapMarkerData = {
-  id: string;
-  lat: number;
-  lng: number;
-  tone: "green" | "amber" | "red";
-  destination?: string;
-  eta?: string;
-  status?: string;
-};
+import { MapMarkerData, mapMarkers } from "@/dummiesData/mapMarkers";
+import { useEffect, useRef, useState } from "react";
 
 type LeafletModule = typeof import("leaflet");
 
@@ -29,65 +20,83 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function popupToneLabel(tone: DeliveryMapMarkerData["tone"]) {
+function getThemeColor(variableName: string, fallback: string) {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const value = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(variableName)
+    .trim();
+
+  return value || fallback;
+}
+
+function popupToneLabel(tone: MapMarkerData["tone"]) {
   if (tone === "green") return "En route";
   if (tone === "amber") return "Attention";
   return "Incident";
 }
 
-function markerColors(tone: DeliveryMapMarkerData["tone"]) {
+function popupToneClass(tone: MapMarkerData["tone"]) {
+  if (tone === "green") return "gomile-map-popup__pill--green";
+  if (tone === "amber") return "gomile-map-popup__pill--amber";
+  return "gomile-map-popup__pill--red";
+}
+
+function markerColors(tone: MapMarkerData["tone"]) {
+  const border = getThemeColor("--color-bg-card", "#FFFFCC");
+
   if (tone === "green") {
     return {
-      fill: "#24a148",
-      border: "#ffffff",
-      soft: "#d7f6df",
-      text: "#166534",
+      fill: getThemeColor("--color-primary", "#0FB12A"),
+      border,
     };
   }
 
   if (tone === "amber") {
     return {
-      fill: "#f59e0b",
-      border: "#ffffff",
-      soft: "#fff1cf",
-      text: "#9a5b00",
+      fill: getThemeColor("--color-warning", "#f59e0b"),
+      border,
     };
   }
 
   return {
-    fill: "#ef4444",
-    border: "#ffffff",
-    soft: "#ffe0e0",
-    text: "#b42318",
+    fill: getThemeColor("--color-danger", "#b91c1c"),
+    border,
   };
 }
 
-function buildPopupContent(marker: DeliveryMapMarkerData) {
+function buildPopupContent(marker: MapMarkerData) {
   const status = marker.status ?? popupToneLabel(marker.tone);
   const destination = marker.destination ?? "Point de livraison";
-  const eta = marker.eta ? `<div class="gomile-map-popup__eta">${escapeHtml(marker.eta)}</div>` : "";
-  const colors = markerColors(marker.tone);
+  const eta = marker.eta
+    ? `<div class="gomile-map-popup__eta">${escapeHtml(marker.eta)}</div>`
+    : "";
 
   return `
     <div class="gomile-map-popup">
       <div class="gomile-map-popup__top">
         <div class="gomile-map-popup__id">${escapeHtml(marker.id)}</div>
-        <span class="gomile-map-popup__pill" style="background:${colors.soft}; color:${colors.text};">
+        <span class="gomile-map-popup__pill ${popupToneClass(marker.tone)}">
           ${escapeHtml(status)}
         </span>
       </div>
       <div class="gomile-map-popup__destination">${escapeHtml(destination)}</div>
-      <div class="gomile-map-popup__caption">Heure prevue</div>
+      <div class="gomile-map-popup__caption">Heure prévue</div>
       ${eta}
     </div>
   `;
 }
 
 export default function GrenobleDeliveryMap({
-  markers,
+  markers = mapMarkers,
 }: {
-  markers: DeliveryMapMarkerData[];
+  markers?: MapMarkerData[];
 }) {
+  const [isMapReady, setIsMapReady] = useState(false);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markerLayerRef = useRef<import("leaflet").LayerGroup | null>(null);
@@ -131,11 +140,15 @@ export default function GrenobleDeliveryMap({
       map.options.maxBoundsViscosity = 0.8;
 
       const markerLayer = L.layerGroup().addTo(map);
+
       mapRef.current = map;
       markerLayerRef.current = markerLayer;
 
       window.requestAnimationFrame(() => {
+        if (cancelled) return;
+
         map.invalidateSize();
+        setIsMapReady(true);
       });
     }
 
@@ -151,6 +164,7 @@ export default function GrenobleDeliveryMap({
 
       markerLayerRef.current = null;
       leafletRef.current = null;
+      setIsMapReady(false);
     };
   }, []);
 
@@ -159,7 +173,7 @@ export default function GrenobleDeliveryMap({
     const map = mapRef.current;
     const markerLayer = markerLayerRef.current;
 
-    if (!L || !map || !markerLayer) {
+    if (!isMapReady || !L || !map || !markerLayer) {
       return;
     }
 
@@ -189,7 +203,7 @@ export default function GrenobleDeliveryMap({
       bounds.extend([marker.lat, marker.lng]);
     });
 
-    if (markers.length > 0) {
+    if (markers.length > 0 && bounds.isValid()) {
       map.fitBounds(bounds, {
         padding: [36, 36],
         maxZoom: 14,
@@ -197,7 +211,9 @@ export default function GrenobleDeliveryMap({
     } else {
       map.setView(GRENOBLE_CENTER, 13);
     }
-  }, [markers]);
+  }, [markers, isMapReady]);
 
   return <div ref={containerRef} className="gomile-leaflet-map h-full w-full" />;
 }
+
+export type { MapMarkerData };
