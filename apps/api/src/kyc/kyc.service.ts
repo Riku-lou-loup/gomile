@@ -12,19 +12,20 @@ export class KycService {
 
   async approveDriverKyc(driverId: string) {
     const { driver, submission } = await this.findPendingSubmission(driverId);
+    await this.prisma.$transaction([
+      this.prisma.kycSubmission.update({
+        where: { id: submission.id },
+        data: {
+          status: KycStatus.ACCEPTED,
+          rejectionReason: null,
+        },
+      }),
+      this.prisma.driver.update({
+        where: { id: driver.id },
+        data: { kycStatus: KycStatus.ACCEPTED },
+      })
+    ]);
 
-    await this.prisma.kycSubmission.update({
-      where: { id: submission.id },
-      data: {
-        status: KycStatus.ACCEPTED,
-        rejectionReason: null,
-      },
-    });
-
-    await this.prisma.driver.update({
-      where: { id: driver.id },
-      data: { kycStatus: KycStatus.ACCEPTED },
-    });
 
     return { message: 'KYC approved' };
   }
@@ -32,19 +33,19 @@ export class KycService {
   async rejectDriverKyc(driverId: string, rejectionReason: string) {
     const { driver, submission } = await this.findPendingSubmission(driverId);
 
-    await this.prisma.kycSubmission.update({
-      where: { id: submission.id },
-      data: {
-        status: KycStatus.REJECTED,
-        rejectionReason,
-      },
-    });
-
-    await this.prisma.driver.update({
-      where: { id: driver.id },
-      data: { kycStatus: KycStatus.REJECTED },
-    });
-
+    await this.prisma.$transaction([
+      this.prisma.kycSubmission.update({
+        where: { id: submission.id },
+        data: {
+          status: KycStatus.REJECTED,
+          rejectionReason,
+        },
+      }),
+      this.prisma.driver.update({
+        where: { id: driver.id },
+        data: { kycStatus: KycStatus.REJECTED },
+      }),
+    ])
     return { message: 'KYC rejected' };
   }
 
@@ -81,7 +82,7 @@ export class KycService {
   // what is my current kyc status, if rejected, why ? and what was my last submission
   async getMyKycStatus(userId: string) {
     const driver = await this.prisma.driver.findUnique({
-      where: { id: userId },
+      where: { userId },
       include: {
         kycSubmissions: {
           orderBy: { createdAt: 'desc' },
@@ -97,13 +98,15 @@ export class KycService {
 
     return {
       status: driver.kycStatus,
-      latestSubmission : latestSubmission ? {
-        id: latestSubmission.id,
-        status: latestSubmission.status,
-        documentUrl: latestSubmission.documentUrl,
-        rejectionReason: latestSubmission.rejectionReason,
-        createdAt: latestSubmission.createdAt,
-      }:null,
+      latestSubmission: latestSubmission
+        ? {
+            id: latestSubmission.id,
+            status: latestSubmission.status,
+            documentUrl: latestSubmission.documentUrl,
+            rejectionReason: latestSubmission.rejectionReason,
+            createdAt: latestSubmission.createdAt,
+          }
+        : null,
     };
   }
 }
