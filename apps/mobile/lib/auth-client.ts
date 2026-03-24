@@ -92,6 +92,7 @@ export type {
   Role,
 };
 
+
 export async function registerMerchant(input: RegisterMerchantInput) {
   const response = await requestApi<AuthTokensResponse>(
     "/auth/register/merchant",

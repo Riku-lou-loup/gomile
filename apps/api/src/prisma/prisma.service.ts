@@ -13,12 +13,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   async onModuleInit() {
     await this.$connect();
-    console.log(
-      'Models:',
-      Object.keys(this).filter(
-        (k: string) => !k.startsWith('$') && !k.startsWith('_'),
-      ),
-    );
   }
 
   async onModuleDestroy() {
