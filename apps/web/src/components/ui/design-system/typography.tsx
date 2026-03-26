@@ -5,7 +5,7 @@ import clsx from 'clsx'
 interface Props {
   variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
   weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
-  theme?: 'black' | 'white' | 'grey' | 'primary' | 'secondary' | 'tertiary'
+  theme?: 'black' | 'white' | 'grey' | 'primaryG' | 'secondaryG' | 'tertiaryG' | 'primaryB' | 'secondaryB' | 'tertiaryB'
   Component?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
   children: React.ReactNode
   className?: string
@@ -34,9 +34,12 @@ const themeClasses: Record<NonNullable<Props['theme']>, string> = {
   black:     'text-text',
   white:     'text-white',
   grey:      'text-text-muted',
-  primary:   'text-primary',
-  secondary: 'text-primary-light',
-  tertiary:  'text-primary-hover',
+  primaryG:   'text-primary-green',
+  secondaryG: 'text-primary-green-light',
+  tertiaryG:  'text-primary-green-hover',
+  primaryB: 'text-primary-blue',
+  secondaryB: 'text-primary-blue-light',
+  tertiaryB: 'text-primary-blue-hover'
 }
 
 export default function Typography({
