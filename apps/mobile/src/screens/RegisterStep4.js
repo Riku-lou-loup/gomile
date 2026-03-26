@@ -1,88 +1,138 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+
+// Tes composants factorisés
+import FormLayout from '../components/FormLayout';
+import SectionTitle from '../components/SectionTitle';
+import GoMileInput from '../components/GoMileInput';
+import GoMileButton from '../components/GoMileButton';
+import DocPicker from '../components/DocPicker'; // Réutilisation du picker de l'étape 3
+
+// Store, Thème et API
 import { useRegistrationStore } from '../store/useRegistrationStore';
-import Header from '../components/Header';
+import { COLORS } from '../constants/theme';
+import { registerDriver } from '../../lib/auth-client';
 
 export default function RegisterStep4({ navigation }) {
-  const { updateField, siret, kbisFile, ribFile } = useRegistrationStore();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Extraction des données du store
+  const { 
+    updateField, siret, kbisFile, ribFile,
+    firstName, lastName, email, phone, 
+    birthDate, gender, address 
+  } = useRegistrationStore();
 
   const pickDoc = async (field) => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    const result = await ImagePicker.launchImageLibraryAsync({ 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
+      quality: 0.7 
+    });
     if (!result.canceled) updateField(field, result.assets[0].uri);
   };
 
-  const handleFinish = () => {
-    // Ici, on enverra tout l'objet Zustand à ton API NestJS plus tard
-    Alert.alert(
-      "Dossier complet !",
-      "Tes informations ont été transmises à l'équipe GoMile pour validation.",
-      [{ text: "OK", onPress: () => navigation.navigate('Login') }]
-    );
-    navigation.replace('MainApp');
+  const handleFinish = async () => {
+    setIsLoading(true);
+
+    try {
+      // Préparation de l'objet pour l'API NestJS
+      const signupData = {
+        email: email,
+        password: "Password123!", // @todo à dynamiser plus tard
+        firstname: firstName,
+        lastName : lastName,
+        avatarUrl : "@todo",
+        gender : gender,
+        phone: phone,
+        documentUrl : "@todo",
+        dateOfBirth : birthDate,
+        address: address,
+      };
+
+      // Appel de l'API
+      const session = await registerDriver(signupData);
+
+      Alert.alert(
+        "Félicitations !",
+        "Ton compte GoMile a été créé avec succès.",
+        [{ text: "C'est parti !", onPress: () => navigation.replace('MainApp') }]
+      );
+
+    } catch (error) {
+      Alert.alert("Erreur d'inscription", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Header title="INFOS PRO" />
-      <View style={styles.progressBar}><View style={[styles.progressLine, { width: '100%' }]} /></View>
+    <FormLayout title="INFOS PRO" progress={100}>
+      <SectionTitle>Dernière étape (4/4)</SectionTitle>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Dernière étape (4/4)</Text>
+      <GoMileInput 
+        label="Numéro SIRET"
+        placeholder="Ex: 123 456 789 00012"
+        value={siret}
+        onChangeText={(v) => updateField('siret', v)}
+        keyboardType="numeric"
+      />
 
-        <Text style={styles.label}>Numéro SIRET</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Ex: 123 456 789 00012"
-          value={siret}
-          onChangeText={(v) => updateField('siret', v)}
-          keyboardType="numeric"
+      {/* On réutilise DocPicker pour le KBIS et le RIB pour garder le même style dashed */}
+      <DocPicker 
+        label="Extrait KBIS (ou déclaration auto-entrepreneur)"
+        value={kbisFile}
+        onPress={() => pickDoc('kbisFile')}
+      />
+
+      <DocPicker 
+        label="RIB (Pour tes futurs virements)"
+        value={ribFile}
+        onPress={() => pickDoc('ribFile')}
+      />
+
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>
+          En cliquant sur Terminer, tu certifies l'exactitude des documents fournis.
+        </Text>
+      </View>
+
+      <View style={styles.buttonRow}>
+        <GoMileButton 
+          title="RETOUR"
+          type="secondary"
+          outline
+          style={{ flex: 1 }}
+          onPress={() => navigation.goBack()}
         />
-
-        <Text style={styles.label}>Extrait KBIS (ou déclaration auto-entrepreneur)</Text>
-        <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDoc('kbisFile')}>
-          <Text style={styles.uploadBtnText}>{kbisFile ? " KBIS Ajouté" : "Sélectionner le document"}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.label}>RIB (Pour tes futurs virements)</Text>
-        <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDoc('ribFile')}>
-          <Text style={styles.uploadBtnText}>{ribFile ? " RIB Ajouté" : "Sélectionner le document"}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
-            En cliquant sur Terminer, tu certifies l'exactitude des documents fournis.
-          </Text>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>RETOUR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>
-            <Text style={styles.finishButtonText}>TERMINER</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+        <GoMileButton 
+          title="TERMINER"
+          type="secondary" // Vert pour la validation finale
+          style={{ flex: 2 }}
+          loading={isLoading}
+          onPress={handleFinish}
+        />
+      </View>
+    </FormLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F2' },
-  progressBar: { height: 6, backgroundColor: '#DDD' },
-  progressLine: { height: '100%', backgroundColor: '#8BC34A' },
-  scrollContent: { padding: 25 },
-  title: { fontSize: 20, fontWeight: '800', color: '#1A3C5A' },
-  label: { color: '#1A3C5A', fontWeight: '600', marginBottom: 8, marginTop: 20 },
-  input: { borderWidth: 1, borderColor: '#DDD', padding: 15, borderRadius: 10, backgroundColor: '#FFF' },
-  uploadBtn: { padding: 15, borderRadius: 10, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#1A3C5A', borderStyle: 'dashed', alignItems: 'center' },
-  uploadBtnText: { color: '#1A3C5A', fontWeight: 'bold' },
-  infoBox: { marginTop: 20, padding: 15, backgroundColor: '#E3F2FD', borderRadius: 8 },
-  infoText: { color: '#1A3C5A', fontSize: 12, textAlign: 'center' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, marginBottom: 40 },
-  backButton: { flex: 1, padding: 16, alignItems: 'center' },
-  backButtonText: { color: '#666', fontWeight: 'bold' },
-  finishButton: { flex: 2, backgroundColor: '#8BC34A', padding: 16, borderRadius: 10, alignItems: 'center' },
-  finishButtonText: { color: '#FFF', fontWeight: 'bold' }
+  infoBox: { 
+    marginTop: 10, 
+    padding: 15, 
+    backgroundColor: '#E3F2FD', 
+    borderRadius: 8 
+  },
+  infoText: { 
+    color: COLORS.secondary, 
+    fontSize: 12, 
+    textAlign: 'center' 
+  },
+  buttonRow: { 
+    flexDirection: 'row', 
+    gap: 15, 
+    marginTop: 30, 
+    marginBottom: 20 
+  }
 });
