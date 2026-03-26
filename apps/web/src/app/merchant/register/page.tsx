@@ -1,26 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { styles } from "./styles";
+import Background from "@/components/ui/auth/background";
 import Typography from "@/components/ui/design-system/typography";
 import Input from "@/components/ui/design-system/input/input";
 import Form from "@/components/ui/design-system/forms/form";
+import ButtonIcon from "@/components/ui/icons/ButtonIcon";
 import MailIcon from "@/components/ui/icons/MailIcon";
 import PasswordKeyIcon from "@/components/ui/icons/passwordKeyIcon";
-import ButtonIcon from "@/components/ui/icons/ButtonIcon";
 import DeadEyeIcon from "@/components/ui/icons/DeadEyeIcon";
+import UserIcon from "@/components/ui/icons/UserIcon";
 import Button from "@/components/ui/design-system/button/button";
-import SuccessMessage from "@/components/ui/design-system/messages/successMessage";
 import ErrorMessage from "@/components/ui/design-system/messages/errorMessage";
 import GmailIcon from "@/components/ui/icons/GmailIcon";
 import FacebookIcon from "@/components/ui/icons/FacebookIcon";
 import { Logo } from "@/components/Logo/Logo";
-import Background from "@/components/ui/auth/background";
-import { useLogin } from "./use-login";
+import { styles } from "../login/styles";
+import { useRegister } from "./use-register";
 
-export default function ClientLoginPage() {
-  const { error, handleSubmit, isPending, showPassword, success, toggleShowPassword } =
-    useLogin();
+export default function MerchantRegisterPage() {
+  const { error, handleSubmit, isPending, showPassword, toggleShowPassword } =
+    useRegister();
 
   return (
     <Background backHref="/">
@@ -38,7 +38,7 @@ export default function ClientLoginPage() {
                 theme="white"
                 className={styles.brandTitle}
               >
-                Connectez-vous
+                Creez votre espace
 
                 <Typography
                   variant="h6"
@@ -46,8 +46,7 @@ export default function ClientLoginPage() {
                   theme="white"
                   className={styles.brandTitle}
                 >
-                  à GoMile
-
+                  marchand GoMile
                 </Typography>
               </Typography>
 
@@ -57,9 +56,9 @@ export default function ClientLoginPage() {
                 theme="white"
                 className={styles.brandDescription}
               >
-                GoMile est une application web qui connecte les marchands et
-                les livreurs pour gerer les commandes, suivre les livraisons et
-                centraliser les operations.
+                Inscrivez votre commerce pour centraliser les commandes,
+                piloter les livraisons et suivre votre activite depuis un seul
+                tableau de bord.
               </Typography>
             </div>
           </div>
@@ -71,7 +70,7 @@ export default function ClientLoginPage() {
                 Component="h1"
                 className={styles.title}
               >
-                Connexion
+                Inscription
               </Typography>
 
               <Typography
@@ -80,13 +79,26 @@ export default function ClientLoginPage() {
                 theme="body"
                 className={styles.loginDescription}
               >
-                Accedez a votre espace marchand.
+                Creez votre compte marchand.
               </Typography>
             </div>
 
             <Form onSubmit={handleSubmit} className={styles.form}>
               <Input
-                id="client-email"
+                id="merchant-name"
+                name="name"
+                type="text"
+                placeholder="Nom du commerce"
+                autoComplete="organization"
+                aria-label="Nom du commerce"
+                leftIcon={<UserIcon className={styles.fieldIcon} />}
+                containerClassName={styles.fieldContainer}
+                inputWrapperClassName={styles.fieldWrapper}
+                className={styles.fieldInput}
+              />
+
+              <Input
+                id="merchant-email"
                 name="email"
                 type="email"
                 placeholder="Adresse e-mail"
@@ -99,11 +111,11 @@ export default function ClientLoginPage() {
               />
 
               <Input
-                id="client-password"
+                id="merchant-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Mot de passe"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 aria-label="Mot de passe"
                 leftIcon={<PasswordKeyIcon className={styles.fieldIcon} />}
                 rightElement={
@@ -125,29 +137,17 @@ export default function ClientLoginPage() {
               />
 
               <div className={styles.forgotRow}>
-                <Link
-                  href="/merchant/forgot-password"
-                  className={styles.forgotLink}
+                <Typography
+                  variant="span"
+                  Component="span"
+                  className={styles.forgotLinkText}
                 >
-                  <Typography
-                    variant="span"
-                    Component="span"
-                    weight="medium"
-                    className={styles.forgotLinkText}
-                  >
-                    Mot de passe oublie?
-                  </Typography>
-                </Link>
+                  Minimum 8 caracteres.
+                </Typography>
               </div>
 
               {error ? (
                 <ErrorMessage className={styles.message}>{error}</ErrorMessage>
-              ) : null}
-
-              {success ? (
-                <SuccessMessage className={styles.message}>
-                  {success}
-                </SuccessMessage>
               ) : null}
 
               <Button
@@ -156,7 +156,7 @@ export default function ClientLoginPage() {
                 fullWidth
                 className={styles.submitButton}
               >
-                {isPending ? "Connexion..." : "Se connecter"}
+                {isPending ? "Inscription..." : "Creer mon compte"}
               </Button>
             </Form>
 
@@ -167,7 +167,7 @@ export default function ClientLoginPage() {
                 Component="span"
                 className={styles.dividerText}
               >
-                Ou connectez-vous avec
+                Ou inscrivez-vous avec
               </Typography>
               <span className={styles.dividerLine} />
             </div>
@@ -192,12 +192,9 @@ export default function ClientLoginPage() {
                 Component="p"
                 className={styles.footerText}
               >
-                Pas encore de compte?{" "}
-                <Link
-                  href="/merchant/register"
-                  className={styles.registerLink}
-                >
-                  S&apos;inscrire
+                Vous avez deja un compte?{" "}
+                <Link href="/merchant/login" className={styles.registerLink}>
+                  Se connecter
                 </Link>
               </Typography>
             </div>
