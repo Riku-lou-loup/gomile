@@ -1,15 +1,36 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+
+// Tes composants factorisés
+import FormLayout from '../components/FormLayout';
+import SectionTitle from '../components/SectionTitle';
+import DocPicker from '../components/DocPicker';
+import GoMileButton from '../components/GoMileButton';
+
+// Store et Thème
 import { useRegistrationStore } from '../store/useRegistrationStore';
-import Header from '../components/Header';
+import { COLORS } from '../constants/theme';
 
 export default function RegisterStep3({ navigation }) {
-  const { updateField, transportType, cniFile, justificatifFile, permisFile, carteGriseFile } = useRegistrationStore();
+  const { 
+    updateField, 
+    transportType, 
+    cniFile, 
+    justificatifFile, 
+    permisFile, 
+    carteGriseFile 
+  } = useRegistrationStore();
 
   const pickImage = async (field) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Permission refusée", "Nous avons besoin d'accéder à vos photos.");
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
     });
@@ -19,71 +40,62 @@ export default function RegisterStep3({ navigation }) {
     }
   };
 
-  const renderDocPicker = (label, field, isFilled) => (
-    <View style={styles.docContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity 
-        style={[styles.uploadBox, isFilled && styles.uploadBoxActive]} 
-        onPress={() => pickImage(field)}
-      >
-        {isFilled ? (
-          <Image source={{ uri: isFilled }} style={styles.previewImage} />
-        ) : (
-          <Text style={styles.uploadText}>+ Ajouter le document</Text>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
-      <Header title="DOCUMENTS" />
-      <View style={styles.progressBar}><View style={[styles.progressLine, { width: '75%' }]} /></View>
+    <FormLayout title="DOCUMENTS" progress={75}>
+      <SectionTitle>Justificatifs (3/4)</SectionTitle>
+      
+      <DocPicker 
+        label="Pièce d'identité (CNI ou Titre de séjour)" 
+        value={cniFile} 
+        onPress={() => pickImage('cniFile')} 
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Justificatifs (3/4)</Text>
-        
-        {renderDocPicker("Pièce d'identité (CNI ou Titre de séjour)", 'cniFile', cniFile)}
-        {renderDocPicker("Justificatif de domicile (-3 mois)", 'justificatifFile', justificatifFile)}
+      <DocPicker 
+        label="Justificatif de domicile (-3 mois)" 
+        value={justificatifFile} 
+        onPress={() => pickImage('justificatifFile')} 
+      />
 
-        {/* Affichage conditionnel selon le transport */}
-        {transportType !== 'velo' && (
-          <>
-            {renderDocPicker("Permis de conduire", 'permisFile', permisFile)}
-            {renderDocPicker("Carte grise du véhicule", 'carteGriseFile', carteGriseFile)}
-          </>
-        )}
+      {/* Affichage conditionnel selon le transport */}
+      {transportType !== 'velo' && (
+        <>
+          <DocPicker 
+            label="Permis de conduire" 
+            value={permisFile} 
+            onPress={() => pickImage('permisFile')} 
+          />
+          <DocPicker 
+            label="Carte grise du véhicule" 
+            value={carteGriseFile} 
+            onPress={() => pickImage('carteGriseFile')} 
+          />
+        </>
+      )}
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>RETOUR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.nextButton} 
-            onPress={() => navigation.navigate('RegisterStep4')}
-          >
-            <Text style={styles.nextButtonText}>CONTINUER</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+      <View style={styles.buttonRow}>
+        <GoMileButton 
+          title="RETOUR" 
+          type="secondary" 
+          outline 
+          style={{ flex: 1 }} 
+          onPress={() => navigation.goBack()} 
+        />
+        <GoMileButton 
+          title="CONTINUER" 
+          type="secondary" 
+          style={{ flex: 2 }} 
+          onPress={() => navigation.navigate('RegisterStep4')} 
+        />
+      </View>
+    </FormLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F2' },
-  progressBar: { height: 6, backgroundColor: '#DDD' },
-  progressLine: { height: '100%', backgroundColor: '#8BC34A' },
-  scrollContent: { padding: 25 },
-  title: { fontSize: 20, fontWeight: '800', color: '#1A3C5A', marginBottom: 10 },
-  label: { color: '#1A3C5A', fontWeight: '600', marginBottom: 8, marginTop: 15 },
-  uploadBox: { height: 120, borderWidth: 2, borderStyle: 'dashed', borderColor: '#CCC', borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
-  uploadBoxActive: { borderColor: '#8BC34A', borderStyle: 'solid' },
-  uploadText: { color: '#AAA', fontWeight: '600' },
-  previewImage: { width: '100%', height: '100%', borderRadius: 10 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, marginBottom: 30 },
-  backButton: { flex: 1, padding: 16, alignItems: 'center' },
-  backButtonText: { color: '#666', fontWeight: 'bold' },
-  nextButton: { flex: 2, backgroundColor: '#1A3C5A', padding: 16, borderRadius: 10, alignItems: 'center' },
-  nextButtonText: { color: '#FFF', fontWeight: 'bold' }
+  buttonRow: { 
+    flexDirection: 'row', 
+    gap: 15, 
+    marginTop: 20, 
+    marginBottom: 20 
+  }
 });
