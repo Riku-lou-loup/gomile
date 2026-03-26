@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { KycModule } from './kyc/kyc.module';
+import { DeliveryPricingModule } from './delivery/delivery-pricing.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { KycModule } from './kyc/kyc.module';
     PrismaModule,
     AuthModule,
     KycModule,
+    DeliveryPricingModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],
