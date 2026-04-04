@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-// Tes composants factorisés
 import FormLayout from '../components/FormLayout';
 import SectionTitle from '../components/SectionTitle';
 import DocPicker from '../components/DocPicker';
