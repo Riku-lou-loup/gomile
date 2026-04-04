@@ -6,6 +6,7 @@ export const useRegistrationStore = create((set) => ({
   lastName: '',
   email: '',
   phone: '',
+  password : '',
   birthDate: '',
   gender: '',
 

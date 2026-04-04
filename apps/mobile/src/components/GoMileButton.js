@@ -11,7 +11,7 @@ export default function GoMileButton({ title, onPress, type = 'secondary', loadi
       style={[
         styles.button, 
         outline ? { borderColor: bgColor, borderWidth: 2 } : { backgroundColor: bgColor },
-        flex ? { flex: flex } : null, // Gère le poids du bouton si on lui donne (ex: flex={2})
+        flex ? { flex: flex } : null, 
         style
       ]}
       activeOpacity={0.8}
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
     alignItems: 'center', 
     justifyContent: 'center',
-    // On enlève le marginTop fixe pour que ce soit la page qui gère ses marges
+    // On enlèeve le marginTop fixe pour que ce soit la page qui gère ses marges
   },
   text: { fontWeight: 'bold', fontSize: 16 },
 });

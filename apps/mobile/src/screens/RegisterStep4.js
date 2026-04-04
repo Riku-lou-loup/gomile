@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-// Tes composants factorisés
 import FormLayout from '../components/FormLayout';
 import SectionTitle from '../components/SectionTitle';
 import GoMileInput from '../components/GoMileInput';
@@ -21,7 +20,9 @@ export default function RegisterStep4({ navigation }) {
   const { 
     updateField, siret, kbisFile, ribFile,
     firstName, lastName, email, phone, 
-    birthDate, gender, address 
+    birthDate, gender, address,transportType, 
+    cniFile, justificatifFile, password,
+    permisFile, carteGriseFile
   } = useRegistrationStore();
 
   const pickDoc = async (field) => {
@@ -32,25 +33,34 @@ export default function RegisterStep4({ navigation }) {
     if (!result.canceled) updateField(field, result.assets[0].uri);
   };
 
+  
   const handleFinish = async () => {
     setIsLoading(true);
 
     try {
-      // Préparation de l'objet pour l'API NestJS
-      const signupData = {
-        email: email,
-        password: "Password123!", // @todo à dynamiser plus tard
-        firstname: firstName,
-        lastName : lastName,
-        avatarUrl : "@todo",
-        gender : gender,
-        phone: phone,
-        documentUrl : "@todo",
-        dateOfBirth : birthDate,
-        address: address,
+      //  Transformation du genre pour l'API
+      const genderMap = {
+        'Homme': 'MALE',
+        'Femme': 'FEMALE',
+        'Autre': 'UNDEFINED'
       };
 
-      // Appel de l'API
+      //  Préparation de l'objet avec les bonnes clés (firstName et NON firstname)
+      const signupData = {
+        email: email,
+        password: password, 
+        firstName: firstName, 
+        lastName : lastName,
+        gender : genderMap[gender] || 'UNDEFINED', // Mapping vers MALE/FEMALE
+        phone: phone,
+        dateOfBirth : birthDate,
+        address: address,
+        avatarUrl : "@todo",
+        documentUrl : cniFile,
+      };
+
+      console.log("Données envoyées :", signupData);
+
       const session = await registerDriver(signupData);
 
       Alert.alert(

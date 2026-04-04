@@ -1,7 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// On utilise MaterialCommunityIcons pour un look plus "App Pro"
 import { MaterialCommunityIcons } from '@expo/vector-icons'; 
+
+// Import de tes constantes de thème
+import { COLORS } from '../constants/theme';
 
 import MissionsScreen from '../screens/MissionsScreen';
 import WalletScreen from '../screens/WalletScreen';
@@ -15,16 +17,16 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#1A3C5A', // Bleu GoMile
-        tabBarInactiveTintColor: '#94A3B8', // Gris bleuté plus moderne
+        tabBarActiveTintColor: COLORS.secondary, // Utilisation du Bleu GoMile
+        tabBarInactiveTintColor: COLORS.placeholder, // Utilisation du Gris factorisé
         tabBarStyle: {
-          height: 85, // Un peu plus haut pour que ce soit plus beau
+          height: 85,
           paddingBottom: 12,
           paddingTop: 8,
           borderTopWidth: 0,
-          backgroundColor: '#FFFFFF',
-          elevation: 10, // Ombre sur Android
-          shadowColor: '#000', // Ombre sur iOS
+          backgroundColor: COLORS.white, // Blanc du thème
+          elevation: 10,
+          shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
@@ -33,10 +35,10 @@ export default function MainTabs() {
           fontSize: 12,
           fontWeight: '600',
         },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }) => {
           let iconName;
 
-          // On définit des icônes spécifiques "Logistique & Dashboard"
+          // Mapping des icônes
           if (route.name === 'TableauDeBord') {
             iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
           } else if (route.name === 'Missions') {
@@ -66,6 +68,7 @@ export default function MainTabs() {
         component={WalletScreen} 
         options={{ tabBarLabel: 'Gains' }}
       />
+      {/* Route utilisée pour la navigation depuis MissionsScreen */}
       <Tab.Screen 
         name="Profil" 
         component={ProfileScreen} 

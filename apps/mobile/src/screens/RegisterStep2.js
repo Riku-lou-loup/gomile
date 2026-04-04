@@ -1,174 +1,220 @@
-// import React from 'react';
-// import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+// import React, { useState } from 'react';
+// import { View, StyleSheet, Alert } from 'react-native';
 // import { useRegistrationStore } from '../store/useRegistrationStore';
-// import Header from '../components/Header';
 
-// export default function RegisterStep2({navigation}) {
-//   const { updateField, nextStep, prevStep, address, transportType } = useRegistrationStore();
+// // Tes briques factorisées
+// import FormLayout from '../components/FormLayout';
+// import GoMileInput from '../components/GoMileInput';
+// import FormButtons from '../components/FormButtons';
+// import OptionCard from '../components/OptionCard';
+// import SectionTitle from '../components/SectionTitle';
+// import AddressAutocomplete from '../components/AddressAutocomplete';
+// import { COLORS } from '../constants/theme';
 
-//   const transportOptions = [
-//     { label: 'Vélo', value: 'velo' },
-//     { label: 'Moto / Scooter', value: 'moto' },
-//     { label: 'Voiture', value: 'voiture' },
-//     { label: 'Utilitaire', value: 'utilitaire' },
-//   ];
+// export default function RegisterStep2({ navigation }) {
+//   const { 
+//     updateField, address, city, zipCode, 
+//     transportType, deliveryCity, deliveryRadius, equipment 
+//   } = useRegistrationStore();
+  
+//   const [isAddressValid, setIsAddressValid] = useState(false);
 
-//   const prevState = () => {
-//     navigation.navigate('RegisterStep1');
-//     // Sera géré par la navigation vers l'Étape 1
+//   const handleNext = () => {
+//     if (!isAddressValid) return Alert.alert("Erreur", "Adresse de résidence invalide.");
+//     if (!deliveryCity) return Alert.alert("Erreur", "Indiquez votre ville de livraison.");
+//     if (!transportType) return Alert.alert("Erreur", "Choisissez un transport.");
+//     navigation.navigate('RegisterStep3');
 //   };
 
 //   return (
-//     <View style={styles.container}>
-//       <Header title="TRANSPORT" />
+//     <FormLayout title="TRANSPORT" progress={50}>
+//       <SectionTitle>Logistique (2/4)</SectionTitle>
 
-//       <View style={styles.progressBar}>
-//         <View style={[styles.progressLine, { width: '50%' }]} />
+//       {/* SECTION ADRESSE */}
+//       <AddressAutocomplete 
+//         label="Adresse de résidence"
+//         value={address}
+//         updateValue={(v) => { updateField('address', v); setIsAddressValid(false); }}
+//         onAddressSelect={(f) => {
+//           updateField('address', f.properties.label);
+//           updateField('city', f.properties.city);
+//           updateField('zipCode', f.properties.postcode);
+//           setIsAddressValid(true);
+//         }}
+//       />
+
+//       <View style={styles.detailsRow}>
+//         <View style={{ flex: 1, marginRight: 10 }}>
+//           <GoMileInput 
+//             label="Ville de livraison" 
+//             placeholder="Ex: Paris"
+//             value={deliveryCity} 
+//             onChangeText={(v) => updateField('deliveryCity', v)} 
+//           />
+//         </View>
+//         <View style={{ width: 120 }}>
+//           <GoMileInput 
+//             label="Rayon (km)" 
+//             placeholder="Ex: 15"
+//             keyboardType="numeric"
+//             value={deliveryRadius} 
+//             onChangeText={(v) => updateField('deliveryRadius', v)} 
+//           />
+//         </View>
 //       </View>
 
-//       <ScrollView contentContainerStyle={styles.scrollContent}>
-//         <Text style={styles.title}>Logistique (2/4)</Text>
+//       {/* SECTION TRANSPORT */}
+//       <SectionTitle style={{ marginTop: 25 }}>Mode de transport</SectionTitle>
+//       <View style={styles.grid}>
+//         {['velo', 'moto', 'voiture', 'utilitaire'].map((type) => (
+//           <OptionCard 
+//             key={type}
+//             label={type.charAt(0).toUpperCase() + type.slice(1)}
+//             active={transportType === type}
+//             onPress={() => updateField('transportType', type)}
+//           />
+//         ))}
+//       </View>
 
-//         <Text style={styles.label}>Adresse de résidence</Text>
-//         <TextInput 
-//           style={styles.input} 
-//           placeholder="Numéro, rue, code postal, ville"
-//           value={address}
-//           onChangeText={(v) => updateField('address', v)}
+//       {/* SECTION ÉQUIPEMENT (Nouveau - Utilise OptionCard) */}
+//       <SectionTitle style={{ marginTop: 25 }}>Équipement possédé</SectionTitle>
+//       <View style={styles.grid}>
+//         <OptionCard 
+//           label="Sac Isotherme" 
+//           active={equipment === 'isotherme'} 
+//           onPress={() => updateField('equipment', 'isotherme')} 
 //         />
+//         <OptionCard 
+//           label="Diable / Chariot" 
+//           active={equipment === 'chariot'} 
+//           onPress={() => updateField('equipment', 'chariot')} 
+//         />
+//       </View>
 
-//         <Text style={styles.label}>Moyen de transport</Text>
-//         <View style={styles.optionsGrid}>
-//           {transportOptions.map((option) => (
-//             <TouchableOpacity 
-//               key={option.value}
-//               style={[
-//                 styles.optionCard, 
-//                 transportType === option.value && styles.optionCardActive
-//               ]}
-//               onPress={() => updateField('transportType', option.value)}
-//             >
-//               <Text style={[
-//                 styles.optionLabel,
-//                 transportType === option.value && styles.optionLabelActive
-//               ]}>
-//                 {option.label}
-//               </Text>
-//             </TouchableOpacity>
-//           ))}
-//         </View>
-
-//         <View style={styles.buttonRow}>
-//           <TouchableOpacity style={styles.backButton} onPress={prevState}>
-//             <Text style={styles.backButtonText}>RETOUR</Text>
-
-//           </TouchableOpacity>
-
-//           <TouchableOpacity 
-//             style={[styles.nextButton, !transportType && { opacity: 0.5 }]} 
-//             onPress={() => navigation.navigate('RegisterStep3')}
-//             disabled={!transportType}
-//           >
-//             <Text style={styles.nextButtonText}>CONTINUER</Text>
-//           </TouchableOpacity>
-//         </View>
-//       </ScrollView>
-//     </View>
+//       <FormButtons 
+//         onBack={() => navigation.goBack()} 
+//         onNext={handleNext} 
+//       />
+//     </FormLayout>
 //   );
 // }
 
 // const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: '#F2F2F2' },
-//   progressBar: { height: 6, backgroundColor: '#DDD' },
-//   progressLine: { height: '100%', backgroundColor: '#8BC34A' },
-//   scrollContent: { padding: 25 },
-//   title: { fontSize: 20, fontWeight: '800', color: '#1A3C5A' },
-//   label: { color: '#1A3C5A', fontWeight: '600', marginBottom: 8, marginTop: 20 },
-//   input: { borderWidth: 1, borderColor: '#DDD', padding: 15, borderRadius: 10, backgroundColor: '#FFF' },
-  
-//   optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 },
-//   optionCard: { 
-//     width: '48%', 
-//     padding: 20, 
-//     borderWidth: 1, 
-//     borderColor: '#DDD', 
-//     borderRadius: 12, 
-//     backgroundColor: '#FFF',
-//     marginBottom: 15,
-//     alignItems: 'center'
+//   detailsRow: { flexDirection: 'row', marginTop: 5 },
+//   grid: { 
+//     flexDirection: 'row', 
+//     flexWrap: 'wrap', 
+//     justifyContent: 'space-between', 
+//     marginTop: 5 
 //   },
-//   optionCardActive: { borderColor: '#1A3C5A', backgroundColor: '#E6F4FE', borderWidth: 2 },
-//   optionLabel: { fontWeight: 'bold', color: '#666' },
-//   optionLabelActive: { color: '#1A3C5A' },
-
-//   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
-//   backButton: { flex: 1, padding: 16, alignItems: 'center', marginRight: 10 },
-//   backButtonText: { color: '#666', fontWeight: 'bold' },
-//   nextButton: { flex: 2, backgroundColor: '#1A3C5A', padding: 16, borderRadius: 10, alignItems: 'center' },
-//   nextButtonText: { color: '#FFF', fontWeight: 'bold' }
 // });
 
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useRegistrationStore } from '../store/useRegistrationStore';
 
-// Imports des composants factorisés
 import FormLayout from '../components/FormLayout';
 import GoMileInput from '../components/GoMileInput';
-import GoMileButton from '../components/GoMileButton';
+import FormButtons from '../components/FormButtons';
 import OptionCard from '../components/OptionCard';
 import SectionTitle from '../components/SectionTitle';
+import AddressAutocomplete from '../components/AddressAutocomplete';
+import MultiOptionGrid from '../components/MultiOptionGrid'; // Nouveau composant
 import { COLORS } from '../constants/theme';
 
 export default function RegisterStep2({ navigation }) {
-  const { updateField, address, transportType } = useRegistrationStore();
+  // On récupère tout du store pour que rien ne disparaisse au retour (Back)
+  const { 
+    updateField, address, city, zipCode, 
+    transportType, deliveryCity, deliveryRadius, equipments = [] 
+  } = useRegistrationStore();
 
-  const transportOptions = [
-    { label: 'Vélo', value: 'velo' },
-    { label: 'Moto / Scooter', value: 'moto' },
-    { label: 'Voiture', value: 'voiture' },
-    { label: 'Utilitaire', value: 'utilitaire' },
-  ];
+  const onSelectAddress = (data) => {
+    updateField('address', data.fullAddress);
+    updateField('city', data.city);
+    updateField('zipCode', data.zip);
+    updateField('street', data.street);
+    
+    // Auto-remplissage de la ville de livraison avec la ville de résidence
+    if (!deliveryCity) {
+      updateField('deliveryCity', data.city);
+    }
+  };
+
+  const handleNext = () => {
+    // Validation stricte : Tous les champs obligatoires
+    if (!address || !city) return Alert.alert("Champs requis", "Veuillez sélectionner une adresse valide.");
+    if (!deliveryCity) return Alert.alert("Champs requis", "Indiquez votre ville de livraison.");
+    if (!deliveryRadius) return Alert.alert("Champs requis", "Indiquez votre rayon d'action.");
+    if (!transportType) return Alert.alert("Champs requis", "Choisissez un mode de transport.");
+    if (equipments.length === 0) return Alert.alert("Champs requis", "Sélectionnez au moins un équipement.");
+
+    navigation.navigate('RegisterStep3');
+  };
 
   return (
     <FormLayout title="TRANSPORT" progress={50}>
       <SectionTitle>Logistique (2/4)</SectionTitle>
 
-      <GoMileInput 
+      <AddressAutocomplete 
         label="Adresse de résidence"
-        placeholder="Numéro, rue, code postal, ville"
         value={address}
-        onChangeText={(v) => updateField('address', v)}
+        updateValue={(v) => updateField('address', v)}
+        onAddressSelect={onSelectAddress}
       />
 
+      <View style={styles.detailsRow}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <GoMileInput 
+            label="Ville de livraison" 
+            value={deliveryCity} 
+            onChangeText={(v) => updateField('deliveryCity', v)} 
+          />
+        </View>
+        <View style={{ width: 120 }}>
+          <GoMileInput 
+            label="Rayon (km)" 
+            keyboardType="numeric"
+            value={deliveryRadius} 
+            onChangeText={(v) => updateField('deliveryRadius', v)} 
+          />
+        </View>
+      </View>
+
+      <SectionTitle style={{ marginTop: 25 }}>Mode de transport</SectionTitle>
       <View style={styles.grid}>
-        {transportOptions.map((opt) => (
+        {['velo', 'moto', 'voiture', 'utilitaire'].map((type) => (
           <OptionCard 
-            key={opt.value}
-            label={opt.label}
-            active={transportType === opt.value}
-            onPress={() => updateField('transportType', opt.value)}
+            key={type}
+            label={type.charAt(0).toUpperCase() + type.slice(1)}
+            active={transportType === type}
+            onPress={() => updateField('transportType', type)}
           />
         ))}
       </View>
 
-      <View style={styles.buttonRow}>
-        <GoMileButton 
-          title="RETOUR" type="secondary" outline style={{ flex: 1 }}
-          onPress={() => navigation.goBack()} 
-        />
-        <GoMileButton 
-          title="CONTINUER" type="secondary" style={{ flex: 2 }}
-          onPress={() => navigation.navigate('RegisterStep3')}
-          disabled={!transportType}
-        />
-      </View>
+      <SectionTitle style={{ marginTop: 25 }}>Équipement possédé (Multi-choix)</SectionTitle>
+      <MultiOptionGrid 
+        options={[
+          { label: 'Sac Isotherme', value: 'isotherme' },
+          { label: 'Diable / Chariot', value: 'chariot' },
+          { label: 'Casque', value: 'casque' },
+          { label: 'Gants', value: 'gants' },
+        ]}
+        selectedValues={equipments}
+        onToggle={(newValues) => updateField('equipments', newValues)}
+      />
+
+      <FormButtons 
+        onBack={() => navigation.goBack()} 
+        onNext={handleNext} 
+      />
     </FormLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 },
-  buttonRow: { flexDirection: 'row', gap: 10, marginTop: 20 }
+  detailsRow: { flexDirection: 'row', marginTop: 5 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 5 },
 });
