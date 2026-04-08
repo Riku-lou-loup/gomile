@@ -10,8 +10,8 @@ export interface AddressInput {
 }
 
 export interface DeliveryEstimateInput{
-    pickupAddress: string;
-    dropoffAddress: string;
+    pickupAddress: AddressInput;
+    dropoffAddress: AddressInput;
     weightGrams: number;
     lengthCm?: number;
     widthCm?: number;
@@ -22,11 +22,12 @@ export interface DeliveryEstimateResponse{
     serviceable: boolean;
     distanceMeters: number;
     durationSeconds: number;
-    estimatedPriceCentimes: number;
+    estimatedPriceCents: number;
     currency: string;
     breakdown: {
-        baseFeeCentimes: number;
-        distanceFeeCentimes: number;
-        heavyParcelSurchargeCentimes: number;
+        baseFeeCents: number;
+        distanceFeeCents: number;
+        heavyParcelSurchargeCents: number;
     };
+
 }
