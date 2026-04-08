@@ -1,8 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DeliveryEstimateDto } from './dto/delivery-estimate.dto';
 import { DeliveryPricingService } from './delivery-pricing.service';
 import { OpenRouteService } from './openrouteservice.service';
+import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+import { UseGuards } from '@nestjs/common';
 
 @ApiTags('delivery-pricing')
 @Controller()
@@ -13,7 +15,13 @@ export class DeliveryPricingController {
   ) {}
 
   @ApiOperation({ summary: 'Estimate delivery cost' })
+  @ApiHeader({ 
+    name: 'x-api-key', 
+    description: 'API key for authentication',
+    required: true,
+  })
   @ApiOkResponse({ description: 'Delivery estimate calculated successfully' })
+  @UseGuards(ApiKeyGuard)
   @Post('delivery-estimates')
   async estimate(@Body() dto: DeliveryEstimateDto) {
     // call api resolving addresses to retrieve lattitude et longitude

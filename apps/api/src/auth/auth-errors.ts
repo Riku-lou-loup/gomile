@@ -15,6 +15,14 @@ export const AUTH_API_ERRORS = {
     statusCode: 401,
     message: 'Jeton de rafraichissement invalide',
   },
+  INVALID_API_KEY: {
+    statusCode: 401,
+    message: 'Clef API invalide',
+  },
+  API_KEY_REVOKED: {
+    statusCode: 403,
+    message: 'Clef API revokee',
+  },
 } as const;
 
 export type AuthApiErrorCode = keyof typeof AUTH_API_ERRORS;
