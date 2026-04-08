@@ -1,32 +1,26 @@
 import type {
     DeliveryEstimateInput,
-    DeliveryEstimateResponse
-} from "../../../shared/delivery-contracts";
+    DeliveryEstimateResponse,
+} from '../../../shared/delivery-contracts'
 
 export class DeliveryClient {
-    constructor(
-        private readonly baseUrl: string,
-        private readonly apiKey: string,
-    ) {
+    constructor (private readonly baseUrl: string, private readonly apiKey: string) {}
 
-    }
-
-    async estimateDelivery (
-        input: DeliveryEstimateInput,
-    ): Promise<DeliveryEstimateResponse> {
-        const response = await fetch(`${this.baseUrl}/estimateDelivery`, {
+    async estimate(input: DeliveryEstimateInput): Promise<DeliveryEstimateResponse> {
+        const response = await fetch(`${this.baseUrl}/delivery-estimates`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}`}:{}),
+                'x-api-key': this.apiKey,
             },
-            body: JSON.stringify({input})
+            body: JSON.stringify(input),
         });
-
+        
         if (!response.ok) {
-            throw new Error(`${response.status} Delivery estimate failed`);
+            throw new Error(`Failed to get delivery estimate: ${response.statusText}`);
         }
 
-        return response.json();
+        const result = await response.json();
+        return result;
     }
 }
