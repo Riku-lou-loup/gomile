@@ -44,7 +44,3 @@ pnpm-lock.yaml
 pnpm-lock.yaml
 package-lock.json
 apps/api/requests.http
-
-# NixOS specific, they should not be committed !
-flake.lock
-flake.nix
