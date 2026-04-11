@@ -1,29 +1,31 @@
-# Brief backend simple
+# Brief Backend (version simple et claire)
 
-Salut,
+Salut Dang,
 
-je veux juste te dire quoi ajouter/modifier cote backend pour que le mobile fonctionne bien. Pas besoin de regarder mon code, je te mets les besoins par ecran.
+je te fais un brief direct pour que le mobile fonctionne .
+L'idee: t'as une checklist API + une checklist DB.
 
-## Ce qui est prioritaire
+## Priorite sprint
 
-1. Auth avec numero de tel + mot de passe
-2. Register driver complet avec les 4 steps
-3. Un reset mot de passe si possible
-4. Les donnees pour afficher dashboard, missions, wallet et profil
+1. Auth propre (login, refresh, logout)
+2. Register driver complet (les 4 etapes)
+3. Dashboard + Missions
+4. Wallet + Profil
+5. Upload docs et KYC
+
+---
 
 ## 1) Auth
 
-### A faire
+### Endpoints a exposer
 
 - POST /auth/login
 - POST /auth/refresh
 - POST /auth/logout
-- si possible POST /auth/forgot-password
-- si possible POST /auth/reset-password
+- Bonus: POST /auth/forgot-password
+- Bonus: POST /auth/reset-password
 
-### Login attendu
-
-L'app veut pouvoir se connecter avec:
+### Login mobile attendu
 
 ```json
 {
@@ -32,80 +34,80 @@ L'app veut pouvoir se connecter avec:
 }
 ```
 
-Regle simple:
-- si `identifier` ressemble a un email, on login par email
-- sinon, on login par numero de telephone
+Regle:
 
-Tu peux garder aussi l'ancien format `email + password` pour ne pas casser la transition.
+- si identifier ressemble a un email -> login email
+- sinon -> login par numero de tel
 
-### Reset mot de passe si tu le fais
 
-Proposition simple:
+### Reponse standard attendue (register/login/refresh)
 
-- POST /auth/forgot-password
 ```json
-{ "identifier": "telephone_ou_email" }
+{
+  "accessToken": "string",
+  "refreshToken": "string",
+  "user": {
+    "id": "uuid",
+    "email": "string",
+    "role": "DRIVER"
+  }
+}
 ```
 
-- POST /auth/reset-password
-```json
-{ "token": "string", "newPassword": "string" }
-```
+---
 
-## 2) Register driver: ce qu'il faut corriger
+## 2) Register Driver (4 etapes mobile)
 
-Le register driver est decoupe en 4 steps. Il faut prendre tout ce que le mobile demande, et laisser en option ce qui ne doit pas empecher l'inscription.
+Le mobile split l'inscription en 4 ecrans, mais idealement le backend accepte un payload final unique (avec champs optionnels).
 
 ### Step 1 - Identite
 
-Champs a prendre:
+| Champ | Type conseille | Exemple | Obligatoire |
+|---|---|---|---|
+| firstName | String | Jean | oui |
+| lastName | String | Dupont | oui |
+| email | String | jean@mail.com | oui |
+| phone | String | +33612345678 | oui |
+| password | String | Password123! | oui |
+| birthDate | DateTime | 1998-05-12 | oui |
+| gender | enum Gender (MALE/FEMALE/UNDEFINED) | MALE | oui |
 
-| Champ | Type DB conseille | Choix possibles | Exemple | Obligatoire |
-|---|---|---|---|---|
-| firstName | String | non | Jean | oui |
-| lastName | String | non | Dupont | oui |
-| email | String | non | jean@mail.com | oui |
-| phone | String | non | +33612345678 | oui |
-| password | String | non | Password123! | oui |
-| birthDate | DateTime | non | 1998-05-12 | oui |
-| gender | enum Gender | MALE, FEMALE, UNDEFINED | MALE | oui |
+### Step 2 - Adresse / Transport
 
-### Step 2 - Adresse / transport
-
-| Champ | Type DB conseille | Choix possibles | Exemple | Obligatoire |
-|---|---|---|---|---|
-| address | String | non | 22 boulevard Clemenceau, Grenoble | oui |
-| city | String | non | Grenoble | oui |
-| zipCode | String | non | 38000 | non, auto-rempli |
-| street | String | non | boulevard Clemenceau | non, auto-rempli |
-| deliveryCity | String | non | Grenoble | oui |
-| deliveryRadius | Int | non | 15 | oui |
-| transportType | enum TransportType | velo, moto, voiture, utilitaire | moto | oui |
-| equipments | String[] ou Json | isotherme, chariot, casque, gants | ["isotherme", "casque"] | oui |
+| Champ | Type conseille | Exemple | Obligatoire |
+|---|---|---|---|
+| address | String | 22 boulevard Clemenceau, Grenoble | oui |
+| city | String | Grenoble | oui |
+| zipCode | String | 38000 | oui |
+| street | String | boulevard Clemenceau | oui |
+| deliveryCity | String | Grenoble | oui |
+| deliveryRadius | Int | 15 | oui |
+| transportType | enum VehicleType (velo/moto/voiture/utilitaire) | moto | oui |
+| equipments | Json ou String[] | ["isotherme", "casque"] | oui |
 
 ### Step 3 - Documents
 
-| Champ | Type DB conseille | Choix possibles | Exemple | Obligatoire |
-|---|---|---|---|---|
-| cniFile | String | non | https://.../cni.jpg | oui ou a rendre optionnel selon ton flux |
-| justificatifFile | String | non | https://.../justif.jpg | oui ou a rendre optionnel selon ton flux |
-| permisFile | String | non | https://.../permis.jpg | non si velo, sinon conseille |
-| carteGriseFile | String | non | https://.../cartegrise.jpg | non si velo, sinon conseille |
+| Champ | Type conseille | Exemple | Obligatoire |
+|---|---|---|---|
+| cniFile | String (URL) | https://.../cni.jpg | recommande |
+| justificatifFile | String (URL) | https://.../justif.jpg | recommande |
+| permisFile | String (URL) | https://.../permis.jpg | non si velo |
+| carteGriseFile | String (URL) | https://.../cartegrise.jpg | non si velo |
 
-Important:
-- si le transportType est velo, permisFile et carteGriseFile peuvent etre facultatifs
-- si le transportType est moto/voiture/utilitaire, tu peux les rendre obligatoires si tu veux
-- le mobile envoie des fichiers locaux, donc il faut soit un endpoint upload, soit un stockage avec URL finale
+Regle metier conseillee:
+
+- transportType = velo -> permis/carte grise facultatifs
+- transportType != velo -> tu peux les rendre obligatoires
 
 ### Step 4 - Infos pro
 
-| Champ | Type DB conseille | Choix possibles | Exemple | Obligatoire |
-|---|---|---|---|---|
-| siret | String | non | 12345678900012 | non, si tu veux laisser l'inscription passer |
-| kbisFile | String | non | https://.../kbis.pdf | non |
-| ribFile | String | non | https://.../rib.pdf | non |
+| Champ | Type conseille | Exemple | Obligatoire |
+|---|---|---|---|
+| siret | String | 12345678900012 | optionnel |
+| kbisFile | String (URL) | https://.../kbis.pdf | optionnel |
+| ribFile | String (URL) | https://.../rib.pdf | optionnel |
 
-### Ce que le backend doit accepter au register driver
+### Payload final que le backend doit accepter
 
 ```json
 {
@@ -135,101 +137,77 @@ Important:
 }
 ```
 
-### Reponse attendue apres register/login/refresh
+---
 
-```json
-{
-  "accessToken": "string",
-  "refreshToken": "string",
-  "user": {
-    "id": "uuid",
-    "email": "string",
-    "role": "DRIVER"
-  }
-}
-```
+## 3) APIs metier attendues par le mobile
 
-## 3) Ce qu'il faut envoyer par page pour afficher l'UI
-
-## Login
-
-Champs UI:
-
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| identifier | String | email ou telephone | +33612345678 |
-| password | String | non | Password123! |
-
-## Dashboard / Tableau de bord
-
-### A faire
+## Dashboard
 
 - GET /driver/me/dashboard
 - PATCH /driver/me/availability
 - PATCH /driver/me/location
 
-### Variables attendues
+Payload/retour attendu:
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| isOnline | Boolean | true, false | true |
-| todayEarnings | Float | non | 24.5 |
-| todayTrips | Int | non | 5 |
-| currentLocation.lat | Float | non | 48.8566 |
-| currentLocation.lng | Float | non | 2.3522 |
-| coverageRadiusMeters | Int | non | 1000 |
+| Champ | Type | Exemple |
+|---|---|---|
+| isOnline | Boolean | true |
+| todayEarnings | Float | 24.5 |
+| todayTrips | Int | 5 |
+| currentLocation.lat | Float | 45.188 |
+| currentLocation.lng | Float | 5.724 |
+| coverageRadiusMeters | Int | 1000 |
 
 ## Missions
-
-### A faire
 
 - GET /driver/me/missions/available
 - POST /driver/me/missions/{missionId}/accept
 - GET /driver/me/missions/active
 - GET /driver/me/missions/history
 
-### Variables de mission
+Pour le flow handshake actuel (recommande):
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| id | UUID/String | non | uuid |
-| type | String | Alimentaire, Colis, Autre | Alimentaire |
-| store | String | non | Monoprix Paris 11 |
-| reward | Float | non | 7.5 |
-| distanceKm | Float | non | 1.2 |
-| pickupAddress | String | non | 10 rue de la Paix |
-| dropOffAddress | String | non | 22 boulevard Clemenceau |
-| status | enum OrderStatus | SEARCHING_DRIVER, DRIVER_ASSIGNED, DRIVER_ACCEPTED, PICKED_UP, DELIVERED, CANCELLED | SEARCHING_DRIVER |
+- POST /driver/me/missions/{missionId}/handshake/merchant/verify
+- POST /driver/me/missions/{missionId}/handshake/client/verify
+
+Objet mission attendu:
+
+| Champ | Type | Exemple |
+|---|---|---|
+| id | UUID/String | uuid |
+| type | String | Alimentaire |
+| store | String | Monoprix - Grenoble Centre |
+| reward | Float | 7.5 |
+| distanceKm | Float | 1.2 |
+| pickupAddress | String | 10 rue de la Paix |
+| dropOffAddress | String | 22 boulevard Clemenceau |
+| status | enum OrderStatus | SEARCHING_DRIVER |
 
 ## Wallet
-
-### A faire
 
 - GET /driver/me/wallet
 - GET /driver/me/wallet/entries
 - POST /driver/me/wallet/withdrawals
 
-### Variables wallet
+Wallet:
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| balance | Int ou Float | non | 245.5 |
-| currency | String | EUR | EUR |
-| pendingAmount | Float | non | 20 |
+| Champ | Type | Exemple |
+|---|---|---|
+| balance | Int/Float | 245.5 |
+| currency | String | EUR |
+| pendingAmount | Float | 20 |
 
-### Variables wallet entry
+Wallet entry:
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| id | UUID/String | non | uuid |
-| type | enum WalletEntryType | CREDIT, DEBIT | CREDIT |
-| amount | Int ou Float | non | 8.5 |
-| status | enum simple | PENDING, COMPLETED, CANCELLED | PENDING |
-| createdAt | DateTime | non | 2026-04-04T14:20:00.000Z |
+| Champ | Type | Exemple |
+|---|---|---|
+| id | UUID/String | uuid |
+| type | CREDIT/DEBIT | CREDIT |
+| amount | Int/Float | 8.5 |
+| status | PENDING/COMPLETED/CANCELLED | PENDING |
+| createdAt | DateTime | 2026-04-04T14:20:00.000Z |
 
 ## Profil
-
-### A faire
 
 - GET /driver/me/profile
 - PATCH /driver/me/profile
@@ -237,47 +215,85 @@ Champs UI:
 - GET /driver/me/referral
 - GET /driver/me/documents
 
-### Variables profil
+Profil attendu:
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| id | UUID/String | non | uuid |
-| firstName | String | non | Jean |
-| lastName | String | non | Paul |
-| avatarUrl | String | non | https://.../avatar.jpg |
-| phone | String | non | +33612345678 |
-| email | String | non | jean@mail.com |
-| rating | Float | non | 4.9 |
-| totalTrips | Int | non | 128 |
-| activeVehicle | enum VehicleType | velo, moto, voiture, utilitaire | velo |
-| gomileCode | String | non | GM-8829-2026 |
-| status | enum DriverStatus simple | AVAILABLE, BUSY, OFFLINE | AVAILABLE |
+| Champ | Type | Exemple |
+|---|---|---|
+| id | UUID/String | uuid |
+| firstName | String | Jean |
+| lastName | String | Paul |
+| avatarUrl | String | https://.../avatar.jpg |
+| phone | String | +33612345678 |
+| email | String | jean@mail.com |
+| rating | Float | 4.9 |
+| totalTrips | Int | 128 |
+| activeVehicle | velo/moto/voiture/utilitaire | velo |
+| gomileCode | String | GM-8829-2026 |
+| status | AVAILABLE/BUSY/OFFLINE | AVAILABLE |
 
-### Variables session vehicle
+---
 
-| Variable | Type DB conseille | Choix possibles | Exemple |
-|---|---|---|---|
-| vehicle | enum VehicleType | velo, moto, voiture, utilitaire | moto |
+## 4) Objets DB a avoir (ou completer)
 
-## Docs / fichiers
+Base existante tres bien:
 
-Le mobile peut envoyer des fichiers locaux, donc il faut une vraie strategie upload.
+- User
+- Driver
+- Merchant
+- Store
+- Order
+- Handshake
+- KycSubmission
+- Wallet
+- WalletEntry
 
-Je te conseille:
+Ajouts recommandes pour coller 100% au mobile:
 
-1. POST /uploads en multipart
-2. ou POST /uploads/presign si tu veux stocker ailleurs
+1. Sur Driver (ou DriverProfile):
+- city
+- zipCode
+- street
+- deliveryCity
+- deliveryRadius
+- transportType
+- equipments
+- activeVehicle
+- isOnline
+- lastLatitude
+- lastLongitude
+- rating
+- totalTrips
+- gomileCode
+- driverStatus
+- siret
 
-Ensuite tu gardes juste l'URL finale en base.
+2. Pour les documents:
+- soit enrichir KycSubmission
+- soit creer DriverDocument (plus propre):
 
-## Si tu veux aller vite
+| Champ | Type | Description |
+|---|---|---|
+| id | UUID | identifiant doc |
+| driverId | UUID | proprietaire |
+| type | enum | CNI, JUSTIFICATIF, PERMIS, CARTE_GRISE, KBIS, RIB |
+| url | String | url finale du fichier |
+| verified | Boolean | verifie ou non |
+| rejectionReason | String? | raison si refuse |
+| createdAt | DateTime | date creation |
 
-Fais d'abord:
+---
 
-1. login avec numero + mdp
-2. register driver complet avec champs optionnels
-3. reset password
-4. dashboard + missions
-5. wallet + profil
+## 5) Upload fichiers
 
+Le mobile envoie des fichiers locaux. Du coup il faut une strategie upload claire.
+
+Option 1 (simple):
+- POST /uploads (multipart/form-data)
+
+Option 2 (scalable):
+- POST /uploads/presign
+- upload direct vers storage (S3/Blob)
+- backend garde seulement l'URL en base
+
+---
 
