@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, Circle } from 'react-native-maps'; // Nécessite l'install de react-native-maps
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
+import MapView, { PROVIDER_GOOGLE, Circle, Marker } from 'react-native-maps'; // Nécessite l'install de react-native-maps
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 // Tes composants
 import Header from '../components/Header';
@@ -12,14 +13,120 @@ const { width, height } = Dimensions.get('window');
 
 export default function DashboardScreen({ navigation }) {
   const isOnline = useAvailabilityStore((state) => state.isOnline);
+  const [isLocating, setIsLocating] = useState(false);
   
-  // Simulation de la position du livreur (Paris par exemple)
+  // Position par défaut: Grenoble centre, remplacée par la position réelle dès disponibilité.
   const [region, setRegion] = useState({
-    latitude: 48.8566,
-    longitude: 2.3522,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+    latitude: 45.1885,
+    longitude: 5.7245,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
   });
+
+  const [currentPosition, setCurrentPosition] = useState({
+    latitude: 45.1885,
+    longitude: 5.7245,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPosition = async () => {
+      try {
+        setIsLocating(true);
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (!isMounted) return;
+
+        const nextRegion = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        };
+
+        setCurrentPosition({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setRegion(nextRegion);
+      } catch (error) {
+        // On garde la position par défaut si la géoloc échoue.
+      } finally {
+        if (isMounted) setIsLocating(false);
+      }
+    };
+
+    loadPosition();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const proposedMissions = useMemo(
+    () => [
+      {
+        id: 'gd-1',
+        type: 'Alimentaire',
+        store: 'Monoprix - Grenoble Centre',
+        storeAddress: '25 Grand Place, 38100 Grenoble',
+        customerArea: '17 Rue de Strasbourg, 38000 Grenoble',
+        customerName: 'Luc Martin',
+        reward: '7.50',
+        distance: '1.2 km',
+        eta: '18 min',
+        notes: 'Commande fragile, éviter les secousses.',
+        mapRegion: {
+          latitude: 45.1842,
+          longitude: 5.7227,
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
+        },
+        pickup: { latitude: 45.1709, longitude: 5.7317 },
+        dropoff: { latitude: 45.1912, longitude: 5.7263 },
+        merchantAuthCode: '4831',
+        clientValidationCode: '9021',
+      },
+      {
+        id: 'gd-2',
+        type: 'Colis',
+        store: 'Point Relais - Caserne de Bonne',
+        storeAddress: '48 Bd Gambetta, 38000 Grenoble',
+        customerArea: '6 Rue Saint-Jacques, 38000 Grenoble',
+        customerName: 'Sara Diallo',
+        reward: '12.00',
+        distance: '2.5 km',
+        eta: '24 min',
+        notes: 'Remise en main propre uniquement.',
+        mapRegion: {
+          latitude: 45.1848,
+          longitude: 5.7301,
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
+        },
+        pickup: { latitude: 45.1829, longitude: 5.7282 },
+        dropoff: { latitude: 45.1904, longitude: 5.7369 },
+        merchantAuthCode: '7294',
+        clientValidationCode: '4407',
+      },
+    ],
+    []
+  );
+
+  const openMissionDetails = (mission) => {
+    navigation.navigate('MissionDetails', {
+      mission: {
+        ...mission,
+        currentPosition,
+      },
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -31,11 +138,30 @@ export default function DashboardScreen({ navigation }) {
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={region}
+        showsUserLocation
         customMapStyle={mapStyle} // Style épuré pour la lisibilité
       >
+        <Marker
+          coordinate={currentPosition}
+          title="Vous"
+          description="Votre position actuelle"
+          pinColor={COLORS.secondary}
+        />
+
+        {proposedMissions.map((mission) => (
+          <Marker
+            key={`pickup-${mission.id}`}
+            coordinate={mission.pickup}
+            title={mission.store}
+            description={`Pickup • ${mission.type} • +${mission.reward} EUR`}
+            pinColor={COLORS.primary}
+            onPress={() => openMissionDetails(mission)}
+          />
+        ))}
+
         {isOnline && (
           <Circle
-            center={region}
+            center={currentPosition}
             radius={1000}
             fillColor="rgba(255, 193, 7, 0.1)"
             strokeColor={COLORS.primary}
@@ -43,22 +169,22 @@ export default function DashboardScreen({ navigation }) {
         )}
       </MapView>
 
-      {/* OVERLAY : STATUT DE CONNEXION */}
-      <View style={styles.statusOverlay}>
-        <View style={[styles.statusCard, isOnline ? styles.cardOnline : styles.cardOffline]}>
-          <View>
-            <Text style={styles.statusLabel}>Vous êtes {isOnline ? 'EN LIGNE' : 'HORS LIGNE'}</Text>
-            <Text style={styles.statusSub}>
-              {isOnline ? 'Prêt à recevoir des missions' : 'Passez en ligne pour livrer'}
-            </Text>
+      {/* OVERLAY : visible uniquement hors ligne */}
+      {!isOnline && (
+        <View style={styles.statusOverlay}>
+          <View style={[styles.statusCard, styles.cardOffline]}>
+            <View>
+              <Text style={styles.statusLabel}>Vous êtes HORS LIGNE</Text>
+              <Text style={styles.statusSub}>Passez en ligne pour livrer</Text>
+            </View>
+            <MaterialCommunityIcons
+              name="toggle-switch-off-outline"
+              size={34}
+              color={COLORS.placeholder}
+            />
           </View>
-          <MaterialCommunityIcons
-            name={isOnline ? 'toggle-switch' : 'toggle-switch-off-outline'}
-            size={34}
-            color={isOnline ? '#4CAF50' : COLORS.placeholder}
-          />
         </View>
-      </View>
+      )}
 
       {/* STATS RAPIDES (FLOTTANTES EN HAUT) */}
       <View style={styles.quickStats}>
@@ -72,8 +198,31 @@ export default function DashboardScreen({ navigation }) {
         </View>
       </View>
 
+      {/* MISSIONS PROPOSÉES */}
+      <View style={styles.missionsOverlay}>
+        <View style={styles.missionsHeader}>
+          <Text style={styles.missionsTitle}>Missions proposées</Text>
+          {isLocating && <Text style={styles.missionsSub}>Localisation...</Text>}
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.missionsScroll}>
+          {proposedMissions.map((mission) => (
+            <TouchableOpacity
+              key={mission.id}
+              style={styles.missionCard}
+              activeOpacity={0.85}
+              onPress={() => openMissionDetails(mission)}
+            >
+              <Text style={styles.missionStore} numberOfLines={1}>{mission.store}</Text>
+              <Text style={styles.missionMeta}>{mission.type} • {mission.distance}</Text>
+              <Text style={styles.missionReward}>+{mission.reward} EUR</Text>
+              <Text style={styles.missionLink}>Voir détails</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {/* BOUTON RECENTRER (FAB ROND) */}
-      <TouchableOpacity style={styles.recenterBtn} onPress={() => {}}>
+      <TouchableOpacity style={[styles.recenterBtn, isOnline && styles.recenterBtnOnline]} onPress={() => {}}>
         <MaterialCommunityIcons name="crosshairs-gps" size={24} color={COLORS.secondary} />
       </TouchableOpacity>
     </View>
@@ -83,7 +232,7 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { width: width, height: height },
-  
+
   // Overlay du statut (Bas de l'écran)
   statusOverlay: {
     position: 'absolute',
@@ -103,7 +252,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 10,
   },
-  cardOnline: { borderTopWidth: 4, borderTopColor: '#4CAF50' },
   cardOffline: { borderTopWidth: 4, borderTopColor: COLORS.placeholder },
   
   statusLabel: { fontWeight: '900', fontSize: 16, color: COLORS.secondary },
@@ -127,6 +275,68 @@ const styles = StyleSheet.create({
   statValue: { fontWeight: '900', color: COLORS.secondary, fontSize: 16 },
   statLabelMini: { fontSize: 10, color: COLORS.placeholder, textTransform: 'uppercase' },
 
+  missionsOverlay: {
+    position: 'absolute',
+    top: 184,
+    left: 14,
+    right: 0,
+  },
+  missionsHeader: {
+    paddingHorizontal: 6,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  missionsTitle: {
+    fontSize: 13,
+    color: COLORS.secondary,
+    fontWeight: '800',
+  },
+  missionsSub: {
+    fontSize: 11,
+    color: COLORS.placeholder,
+    marginRight: 20,
+  },
+  missionsScroll: {
+    paddingRight: 16,
+    gap: 10,
+  },
+  missionCard: {
+    width: 210,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+  },
+  missionStore: {
+    color: COLORS.secondary,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  missionMeta: {
+    marginTop: 4,
+    color: COLORS.placeholder,
+    fontSize: 11,
+  },
+  missionReward: {
+    marginTop: 8,
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  missionLink: {
+    marginTop: 8,
+    color: COLORS.secondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
   // Bouton recentrer
   recenterBtn: {
     position: 'absolute',
@@ -139,7 +349,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-  }
+  },
+  recenterBtnOnline: {
+    bottom: 40,
+  },
 });
 
 // Style de carte simplifié (JSON standard Google Maps)

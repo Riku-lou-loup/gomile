@@ -18,6 +18,7 @@ config.resolver.disableHierarchicalLookup = true;
 config.resolver.extraNodeModules = {
   react: path.resolve(projectRoot, 'node_modules/react'),
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+  'expo-location': path.resolve(workspaceRoot, 'node_modules/expo-location'),
 };
 
 module.exports = config;

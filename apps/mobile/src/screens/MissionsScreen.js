@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Tes composants factorisés
@@ -14,12 +14,55 @@ export default function MissionsScreen({ navigation }) {
   
   // --- ÉTATS DE TEST ---
   const isAccountValidated = true; 
-  const [activeMission, setActiveMission] = useState(null); // Stocke la mission acceptée
 
   // Mock data : Missions non staffées (disponibles)
   const availableMissions = [
-    { id: '1', type: 'Alimentaire', store: 'Monoprix - Paris 11', reward: '7.50', distance: '1.2 km' },
-    { id: '2', type: 'Colis', store: 'Point Relais - Bastille', reward: '12.00', distance: '2.5 km' },
+    {
+      id: '1',
+      type: 'Alimentaire',
+      store: 'Monoprix - Grenoble Centre',
+      storeAddress: '25 Grand Place, 38100 Grenoble',
+      customerArea: '17 Rue de Strasbourg, 38000 Grenoble',
+      customerName: 'Luc Martin',
+      reward: '7.50',
+      distance: '1.2 km',
+      eta: '18 min',
+      notes: 'Commande fragile, eviter les secousses.',
+      mapRegion: {
+        latitude: 45.1842,
+        longitude: 5.7227,
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      },
+      currentPosition: { latitude: 45.1881, longitude: 5.7245 },
+      pickup: { latitude: 45.1709, longitude: 5.7317 },
+      dropoff: { latitude: 45.1912, longitude: 5.7263 },
+      merchantAuthCode: '4831',
+      clientValidationCode: '9021',
+    },
+    {
+      id: '2',
+      type: 'Colis',
+      store: 'Point Relais - Caserne de Bonne',
+      storeAddress: '48 Bd Gambetta, 38000 Grenoble',
+      customerArea: '6 Rue Saint-Jacques, 38000 Grenoble',
+      customerName: 'Sara Diallo',
+      reward: '12.00',
+      distance: '2.5 km',
+      eta: '24 min',
+      notes: 'Remise en main propre uniquement.',
+      mapRegion: {
+        latitude: 45.1848,
+        longitude: 5.7301,
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      },
+      currentPosition: { latitude: 45.1887, longitude: 5.7208 },
+      pickup: { latitude: 45.1829, longitude: 5.7282 },
+      dropoff: { latitude: 45.1904, longitude: 5.7369 },
+      merchantAuthCode: '7294',
+      clientValidationCode: '4407',
+    },
   ];
 
   // Mock data : Historique (faites par l'user)
@@ -28,9 +71,8 @@ export default function MissionsScreen({ navigation }) {
     { id: '102', store: 'Boulangerie Louise', date: '2 oct.', reward: '5.20' },
   ];
 
-  const handleAcceptMission = (mission) => {
-    setActiveMission(mission);
-    // Ici tu lancerais normalement la navigation GPS
+  const handleOpenMissionDetails = (mission) => {
+    navigation.navigate('MissionDetails', { mission });
   };
 
   return (
@@ -54,7 +96,7 @@ export default function MissionsScreen({ navigation }) {
               <MissionCard 
                 key={item.id} 
                 mission={item} 
-                onAccept={() => handleAcceptMission(item)} 
+                onOpenDetails={() => handleOpenMissionDetails(item)} 
               />
             ))}
 
@@ -71,27 +113,13 @@ export default function MissionsScreen({ navigation }) {
           </View>
         )}
       </FormLayout>
-
-      {/* --- BOUTON FLOTTANT (FAB) --- */}
-      {/* Il n'apparaît que si une mission est sélectionnée */}
-      {activeMission && (
-  <TouchableOpacity 
-    style={styles.fabRound} 
-    activeOpacity={0.8}
-    onPress={() => alert(`Retour à la mission : ${activeMission.store}`)}
-  >
-    <MaterialCommunityIcons name="navigation" size={30} color={COLORS.white} />
-    {/* Petit badge de notification pour signaler l'activité */}
-    <View style={styles.notificationBadge} />
-  </TouchableOpacity>
-)}
     </View>
   );
 }
 
 // --- SOUS-COMPOSANTS ---
 
-const MissionCard = ({ mission, onAccept }) => (
+const MissionCard = ({ mission, onOpenDetails }) => (
   <View style={styles.card}>
     <View style={styles.cardHeader}>
       <Text style={styles.storeName}>{mission.store}</Text>
@@ -101,7 +129,7 @@ const MissionCard = ({ mission, onAccept }) => (
       <Text style={styles.metaText}>📍 {mission.distance}</Text>
       <Text style={styles.metaText}>📦 {mission.type}</Text>
     </View>
-    <GoMileButton title="ACCEPTER" style={styles.acceptBtn} onPress={onAccept} />
+    <GoMileButton title="VOIR LES DETAILS" style={styles.acceptBtn} onPress={onOpenDetails} />
   </View>
 );
 
@@ -152,32 +180,4 @@ const styles = StyleSheet.create({
   historyStore: { fontWeight: '600', color: COLORS.secondary },
   historyDate: { fontSize: 12, color: COLORS.placeholder },
   historyPrice: { fontWeight: 'bold', color: COLORS.secondary },
-
-  fabRound: {
-    position: 'absolute',
-    bottom: 30, // Distance du bas
-    right: 20,  // Fixé à droite uniquement
-    backgroundColor: COLORS.secondary,
-    width: 65,  // Largeur égale à la hauteur pour le rond
-    height: 65,
-    borderRadius: 32.5, // Moitié de la largeur/hauteur
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,       // Ombre Android
-    shadowColor: '#000', // Ombre iOS
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50', // Vert flash pour signaler la mission en cours
-    borderWidth: 2,
-    borderColor: COLORS.secondary,
-  }
 });
