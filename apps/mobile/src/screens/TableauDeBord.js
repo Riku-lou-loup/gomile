@@ -8,6 +8,7 @@ import * as Location from 'expo-location';
 import Header from '../components/Header';
 import { COLORS } from '../constants/theme';
 import { useAvailabilityStore } from '../store/useAvailabilityStore';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -230,7 +231,7 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { ...COMMON_STYLE_VALUES.flex1 },
   map: { width: width, height: height },
 
   // Overlay du statut (Bas de l'écran)
@@ -241,9 +242,7 @@ const styles = StyleSheet.create({
     right: 20,
   },
   statusCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
     padding: 20,
     borderRadius: 20,
     backgroundColor: COLORS.white,
@@ -254,8 +253,8 @@ const styles = StyleSheet.create({
   },
   cardOffline: { borderTopWidth: 4, borderTopColor: COLORS.placeholder },
   
-  statusLabel: { fontWeight: '900', fontSize: 16, color: COLORS.secondary },
-  statusSub: { fontSize: 12, color: COLORS.placeholder, marginTop: 2 },
+  statusLabel: { fontWeight: '900', fontSize: 16, ...COMMON_STYLE_VALUES.textSecondary },
+  statusSub: { fontSize: 12, ...COMMON_STYLE_VALUES.textMuted, marginTop: 2 },
 
   // Stats rapides (Haut de l'écran sous le header)
   quickStats: {
@@ -264,7 +263,7 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     backgroundColor: COLORS.white,
-    flexDirection: 'row',
+    ...COMMON_STYLE_VALUES.rowCenter,
     padding: 15,
     borderRadius: 15,
     elevation: 5,
@@ -272,8 +271,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontWeight: '900', color: COLORS.secondary, fontSize: 16 },
-  statLabelMini: { fontSize: 10, color: COLORS.placeholder, textTransform: 'uppercase' },
+  statValue: { fontWeight: '900', ...COMMON_STYLE_VALUES.textSecondary, fontSize: 16 },
+  statLabelMini: { fontSize: 10, ...COMMON_STYLE_VALUES.textMuted, textTransform: 'uppercase' },
 
   missionsOverlay: {
     position: 'absolute',
@@ -284,18 +283,16 @@ const styles = StyleSheet.create({
   missionsHeader: {
     paddingHorizontal: 6,
     marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
   },
   missionsTitle: {
     fontSize: 13,
-    color: COLORS.secondary,
+    ...COMMON_STYLE_VALUES.textSecondary,
     fontWeight: '800',
   },
   missionsSub: {
     fontSize: 11,
-    color: COLORS.placeholder,
+    ...COMMON_STYLE_VALUES.textMuted,
     marginRight: 20,
   },
   missionsScroll: {
@@ -315,13 +312,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   missionStore: {
-    color: COLORS.secondary,
+    ...COMMON_STYLE_VALUES.textSecondary,
     fontWeight: '800',
     fontSize: 13,
   },
   missionMeta: {
     marginTop: 4,
-    color: COLORS.placeholder,
+    ...COMMON_STYLE_VALUES.textMuted,
     fontSize: 11,
   },
   missionReward: {
@@ -332,7 +329,7 @@ const styles = StyleSheet.create({
   },
   missionLink: {
     marginTop: 8,
-    color: COLORS.secondary,
+    ...COMMON_STYLE_VALUES.textSecondary,
     fontSize: 11,
     fontWeight: '700',
   },

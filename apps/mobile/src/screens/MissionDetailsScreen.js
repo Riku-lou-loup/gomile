@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import Header from '../components/Header';
 import GoMileButton from '../components/GoMileButton';
 import { COLORS } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 import { useMissionStore } from '../store/useMissionStore';
 import { formatDistanceKm, formatDurationMin, getDrivingRoute } from '../../lib/routing';
 
@@ -161,8 +162,8 @@ function InfoPill({ icon, text }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  map: { flex: 1 },
+  container: { ...COMMON_STYLE_VALUES.screenContainer },
+  map: { ...COMMON_STYLE_VALUES.flex1 },
   bottomSheet: {
     position: 'absolute',
     left: 0,
@@ -192,8 +193,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 2,
   },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  storeName: { color: COLORS.secondary, fontSize: 17, fontWeight: '900', flex: 1, marginRight: 8 },
+  topRow: { ...COMMON_STYLE_VALUES.rowBetween },
+  storeName: { ...COMMON_STYLE_VALUES.textSecondary, fontSize: 17, fontWeight: '900', flex: 1, marginRight: 8 },
   reward: { color: COLORS.primary, fontSize: 18, fontWeight: '900' },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, gap: 8 },
   pill: {
@@ -204,12 +205,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  pillText: { marginLeft: 5, color: COLORS.secondary, fontSize: 12, fontWeight: '700' },
-  sectionTitle: { marginTop: 12, marginBottom: 6, color: COLORS.secondary, fontWeight: '800' },
-  infoLine: { color: COLORS.placeholder, fontSize: 12, marginTop: 2 },
+  pillText: { marginLeft: 5, ...COMMON_STYLE_VALUES.textSecondary, fontSize: 12, fontWeight: '700' },
+  sectionTitle: { marginTop: 12, marginBottom: 6, ...COMMON_STYLE_VALUES.textSecondary, fontWeight: '800' },
+  infoLine: { ...COMMON_STYLE_VALUES.textMuted, fontSize: 12, marginTop: 2 },
   actionsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
   refuseBtn: { backgroundColor: '#D32F2F' },
   acceptBtn: { backgroundColor: '#2E7D32' },
-  emptyState: { flex: 1, justifyContent: 'center', padding: 20 },
-  emptyText: { color: COLORS.secondary, marginBottom: 12, textAlign: 'center' },
+  emptyState: { ...COMMON_STYLE_VALUES.flex1, justifyContent: 'center', padding: 20 },
+  emptyText: { ...COMMON_STYLE_VALUES.textSecondary, marginBottom: 12, textAlign: 'center' },
 });

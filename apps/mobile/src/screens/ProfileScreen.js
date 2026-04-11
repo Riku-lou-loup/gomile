@@ -9,6 +9,7 @@ import GoMileButton from '../components/GoMileButton';
 
 // Thème et constantes
 import { COLORS, SIZES } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 const DEFAULT_AVATAR = require('../../assets/livreur.jpg');
 
@@ -255,13 +256,12 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 4,
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardTop: { ...COMMON_STYLE_VALUES.rowBetween },
   avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: COLORS.primary },
   
   scoringContainer: { alignItems: 'flex-end' },
   scoreBadge: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    ...COMMON_STYLE_VALUES.rowCenter,
     backgroundColor: COLORS.white, 
     paddingHorizontal: 8, 
     paddingVertical: 4, 
@@ -272,20 +272,18 @@ const styles = StyleSheet.create({
 
   cardBody: { marginTop: 15 },
   nameText: { color: COLORS.white, fontSize: 22, fontWeight: '900' },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
+  infoRow: { ...COMMON_STYLE_VALUES.rowCenter, marginTop: 5 },
   infoText: { marginLeft: 8, fontSize: 14, fontWeight: '500' },
 
   cardFooter: { 
     marginTop: 20, 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+    ...COMMON_STYLE_VALUES.rowBetween,
     borderTopWidth: 1, 
     borderTopColor: 'rgba(255,255,255,0.1)', 
     paddingTop: 15,
-    alignItems: 'center'
   },
   idText: { color: 'rgba(255,255,255,0.3)', fontSize: 10, letterSpacing: 1 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center' },
+  statusBadge: { ...COMMON_STYLE_VALUES.rowCenter },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginRight: 6 },
   statusText: { color: COLORS.primary, fontSize: 10, fontWeight: 'bold' },
 
@@ -305,8 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dropdownTriggerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowCenter,
     gap: 10,
   },
   dropdownTriggerText: {
@@ -325,9 +322,7 @@ const styles = StyleSheet.create({
   dropdownItem: {
     minHeight: 46,
     paddingHorizontal: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
@@ -351,13 +346,10 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   kycHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
   },
   kycBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowCenter,
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -369,7 +361,7 @@ const styles = StyleSheet.create({
   },
   kycMessage: {
     marginTop: 12,
-    color: COLORS.secondary,
+    ...COMMON_STYLE_VALUES.textSecondary,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -379,9 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 40,
     paddingHorizontal: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
   },
   kycCtaText: {
     color: COLORS.white,
@@ -393,8 +383,7 @@ const styles = StyleSheet.create({
     marginTop: 20, 
     padding: 15, 
     borderRadius: 15, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    ...COMMON_STYLE_VALUES.rowCenter,
     borderWidth: 1,
     borderColor: COLORS.border
   },

@@ -9,6 +9,7 @@ import GoMileButton from '../components/GoMileButton';
 
 // Thème et constantes
 import { COLORS, SIZES } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 export default function MissionsScreen({ navigation }) {
   
@@ -146,8 +147,8 @@ const HistoryRow = ({ item }) => (
 const styles = StyleSheet.create({
   // Status Box (Non validé)
   statusBox: { padding: 20, backgroundColor: '#E3F2FD', borderRadius: 15, alignItems: 'center' },
-  statusTitle: { fontWeight: 'bold', color: COLORS.secondary, marginTop: 10 },
-  statusText: { textAlign: 'center', color: COLORS.secondary, fontSize: 12 },
+  statusTitle: { fontWeight: 'bold', ...COMMON_STYLE_VALUES.textSecondary, marginTop: 10 },
+  statusText: { textAlign: 'center', ...COMMON_STYLE_VALUES.textSecondary, fontSize: 12 },
 
   // Cartes Missions
   card: { 
@@ -159,11 +160,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     elevation: 3
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  storeName: { fontWeight: 'bold', fontSize: 16, color: COLORS.secondary },
+  cardHeader: { ...COMMON_STYLE_VALUES.rowBetween },
+  storeName: { fontWeight: 'bold', fontSize: 16, ...COMMON_STYLE_VALUES.textSecondary },
   price: { fontWeight: '900', color: COLORS.primary, fontSize: 18 },
   cardMeta: { flexDirection: 'row', gap: 15, marginVertical: 10 },
-  metaText: { fontSize: 12, color: COLORS.placeholder },
+  metaText: { fontSize: 12, ...COMMON_STYLE_VALUES.textMuted },
   acceptBtn: { paddingVertical: 10 },
 
   // Historique
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, 
     borderBottomColor: '#F5F5F5' 
   },
-  historyStore: { fontWeight: '600', color: COLORS.secondary },
-  historyDate: { fontSize: 12, color: COLORS.placeholder },
-  historyPrice: { fontWeight: 'bold', color: COLORS.secondary },
+  historyStore: { fontWeight: '600', ...COMMON_STYLE_VALUES.textSecondary },
+  historyDate: { fontSize: 12, ...COMMON_STYLE_VALUES.textMuted },
+  historyPrice: { fontWeight: 'bold', ...COMMON_STYLE_VALUES.textSecondary },
 });

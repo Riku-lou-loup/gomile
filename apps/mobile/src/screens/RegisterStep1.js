@@ -10,6 +10,7 @@ import FormButtons from '../components/FormButtons'; // Le nouveau composant pou
 
 // Config et Store
 import { COLORS } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 import { useRegistrationStore } from '../store/useRegistrationStore';
 
 export default function RegisterStep1({ navigation }) {
@@ -137,7 +138,7 @@ export default function RegisterStep1({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  label: { color: COLORS.secondary, fontWeight: '600', marginBottom: 5, marginTop: 15 },
+  label: { ...COMMON_STYLE_VALUES.textSecondary, fontWeight: '600', marginBottom: 5, marginTop: 15 },
   dateInput: { 
     borderWidth: 1, 
     borderColor: COLORS.border, 
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
     backgroundColor: COLORS.white 
   },
-  genderContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
+  genderContainer: { ...COMMON_STYLE_VALUES.rowBetween, marginTop: 5 },
   genderButton: { 
     flex: 1, 
     padding: 10, 

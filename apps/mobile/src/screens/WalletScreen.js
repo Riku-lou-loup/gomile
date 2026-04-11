@@ -10,6 +10,7 @@ import GoMileButton from '../components/GoMileButton';
 
 // Thème et constantes
 import { COLORS, SIZES } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 export default function WalletScreen({ navigation }) {
   
@@ -96,31 +97,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  bonusHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  bonusTitle: { fontWeight: '800', color: COLORS.secondary },
+  bonusHeader: { ...COMMON_STYLE_VALUES.rowBetween, marginBottom: 10 },
+  bonusTitle: { fontWeight: '800', ...COMMON_STYLE_VALUES.textSecondary },
   bonusValue: { color: COLORS.primary, fontWeight: 'bold' },
   
   progressBarBg: { height: 8, backgroundColor: '#F0F0F0', borderRadius: 4, overflow: 'hidden' },
   progressBarFill: { height: '100%', backgroundColor: COLORS.primary },
-  bonusSub: { fontSize: 11, color: COLORS.placeholder, marginTop: 8, textAlign: 'center' },
+  bonusSub: { fontSize: 11, ...COMMON_STYLE_VALUES.textMuted, marginTop: 8, textAlign: 'center' },
 
   // Historique
   historyList: { backgroundColor: COLORS.white, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
   transactionRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    ...COMMON_STYLE_VALUES.rowCenter,
     padding: 15, 
     borderBottomWidth: 1, 
     borderBottomColor: '#F5F5F5' 
   },
   iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' },
   transactionInfo: { flex: 1, marginLeft: 12 },
-  transType: { fontWeight: '700', color: COLORS.secondary, fontSize: 14 },
-  transDate: { color: COLORS.placeholder, fontSize: 12, marginTop: 2 },
+  transType: { fontWeight: '700', ...COMMON_STYLE_VALUES.textSecondary, fontSize: 14 },
+  transDate: { ...COMMON_STYLE_VALUES.textMuted, fontSize: 12, marginTop: 2 },
   
   transactionAmount: { alignItems: 'flex-end' },
   amountText: { fontWeight: '900', fontSize: 15 },
-  transStatus: { fontSize: 10, color: COLORS.placeholder, marginTop: 2 },
+  transStatus: { fontSize: 10, ...COMMON_STYLE_VALUES.textMuted, marginTop: 2 },
 
   fullHistoryBtn: { marginTop: 15, marginBottom: 30 }
 });

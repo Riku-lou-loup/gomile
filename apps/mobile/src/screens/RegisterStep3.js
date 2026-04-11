@@ -9,7 +9,7 @@ import GoMileButton from '../components/GoMileButton';
 
 // Store et Thème
 import { useRegistrationStore } from '../store/useRegistrationStore';
-import { COLORS } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 export default function RegisterStep3({ navigation }) {
   const { 
@@ -92,7 +92,7 @@ export default function RegisterStep3({ navigation }) {
 
 const styles = StyleSheet.create({
   buttonRow: { 
-    flexDirection: 'row', 
+    ...COMMON_STYLE_VALUES.rowCenter,
     gap: 15, 
     marginTop: 20, 
     marginBottom: 20 

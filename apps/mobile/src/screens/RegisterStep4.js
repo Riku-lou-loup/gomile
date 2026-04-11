@@ -11,6 +11,7 @@ import DocPicker from '../components/DocPicker'; // Réutilisation du picker de 
 // Store, Thème et API
 import { useRegistrationStore } from '../store/useRegistrationStore';
 import { COLORS } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 import { registerDriver } from '../../lib/auth-client';
 
 export default function RegisterStep4({ navigation }) {
@@ -135,12 +136,12 @@ const styles = StyleSheet.create({
     borderRadius: 8 
   },
   infoText: { 
-    color: COLORS.secondary, 
+    ...COMMON_STYLE_VALUES.textSecondary,
     fontSize: 12, 
     textAlign: 'center' 
   },
   buttonRow: { 
-    flexDirection: 'row', 
+    ...COMMON_STYLE_VALUES.rowCenter,
     gap: 15, 
     marginTop: 30, 
     marginBottom: 20 

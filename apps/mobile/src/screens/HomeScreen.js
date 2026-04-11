@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 
 export default function HomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
@@ -78,9 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowBetween,
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#FFF',
@@ -141,8 +140,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    ...COMMON_STYLE_VALUES.rowBetween,
     marginBottom: 20,
   },
   statItem: {
