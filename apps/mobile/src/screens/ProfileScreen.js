@@ -6,7 +6,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import FormLayout from '../components/FormLayout';
 import SectionTitle from '../components/SectionTitle';
 import GoMileButton from '../components/GoMileButton';
-import MultiOptionGrid from '../components/MultiOptionGrid'; // Réutilisation pour le choix du véhicule
 
 // Thème et constantes
 import { COLORS, SIZES } from '../constants/theme';
@@ -16,13 +15,64 @@ const DEFAULT_AVATAR = require('../../assets/livreur.jpg');
 export default function ProfileScreen({ navigation }) {
   // État pour le véhicule actif (Simule le changement pour l'API)
   const [activeVehicle, setActiveVehicle] = useState('velo');
+  const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
+  const [kycStatus] = useState('in_progress');
 
   const vehicleOptions = [
     { label: 'Vélo', value: 'velo' },
-    { label: 'moto', value: 'moto' },
+    { label: 'Moto', value: 'moto' },
     { label: 'Voiture', value: 'voiture' },
     { label: 'Utilitaire', value: 'utilitaire' },
   ];
+
+  const vehicleLabel = vehicleOptions.find((v) => v.value === activeVehicle)?.label || 'Vélo';
+
+  const vehicleIcon =
+    activeVehicle === 'velo'
+      ? 'bike'
+      : activeVehicle === 'moto'
+      ? 'moped'
+      : activeVehicle === 'utilitaire'
+      ? 'truck-outline'
+      : 'car';
+
+  const handleVehicleSelect = (value) => {
+    setActiveVehicle(value);
+    setShowVehicleDropdown(false);
+  };
+
+  const kycStatusConfig = {
+    not_submitted: {
+      label: 'Non soumis',
+      color: '#F57C00',
+      icon: 'alert-circle-outline',
+      message: 'Ajoute tes documents pour activer toutes les fonctionnalités.',
+      cta: 'Compléter mon KYC',
+    },
+    in_progress: {
+      label: 'En cours de vérification',
+      color: '#1E88E5',
+      icon: 'progress-clock',
+      message: 'Tes documents ont été reçus. Vérification en cours.',
+      cta: 'Voir mes documents',
+    },
+    approved: {
+      label: 'Vérifié',
+      color: '#2E7D32',
+      icon: 'check-decagram',
+      message: 'Ton compte est validé. Tu as accès à toutes les missions.',
+      cta: 'Voir les détails',
+    },
+    rejected: {
+      label: 'Refusé',
+      color: '#D32F2F',
+      icon: 'close-octagon-outline',
+      message: 'Un ou plusieurs documents sont invalides. Mets-les à jour.',
+      cta: 'Corriger mes documents',
+    },
+  };
+
+  const currentKyc = kycStatusConfig[kycStatus] || kycStatusConfig.not_submitted;
 
   const handleInvite = async () => {
     try {
@@ -36,7 +86,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <FormLayout title="MON ESPACE">
+    <FormLayout title="MON ESPACE" showAvailabilityToggle>
       
       {/* --- CARTE D'IDENTITÉ & SCORING --- */}
       <View style={styles.idCard}>
@@ -55,12 +105,12 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.nameText}>Jean Paul</Text>
           <View style={styles.infoRow}>
             <MaterialCommunityIcons 
-                name={activeVehicle === 'velo' ? "bike" : activeVehicle === 'scooter' ? "moped" : "car"} 
+                name={vehicleIcon}
                 size={16} 
                 color={COLORS.primary} 
             />
             <Text style={[styles.infoText, {color: COLORS.white}]}>
-                En service : {vehicleOptions.find(v => v.value === activeVehicle).label}
+                En service : {vehicleLabel}
             </Text>
           </View>
         </View>
@@ -76,11 +126,68 @@ export default function ProfileScreen({ navigation }) {
 
       {/* --- CHANGEMENT DE VÉHICULE (Action rapide) --- */}
       <SectionTitle style={{ marginTop: 25 }}>Véhicule pour cette session</SectionTitle>
-      <MultiOptionGrid 
-        options={vehicleOptions} 
-        selectedValues={[activeVehicle]} 
-        onToggle={(val) => setActiveVehicle(val[val.length - 1])} // Prend la dernière sélection
-      />
+      <View style={styles.dropdownContainer}>
+        <TouchableOpacity
+          style={styles.dropdownTrigger}
+          activeOpacity={0.85}
+          onPress={() => setShowVehicleDropdown((prev) => !prev)}
+        >
+          <View style={styles.dropdownTriggerLeft}>
+            <MaterialCommunityIcons name={vehicleIcon} size={18} color={COLORS.secondary} />
+            <Text style={styles.dropdownTriggerText}>{vehicleLabel}</Text>
+          </View>
+          <MaterialCommunityIcons
+            name={showVehicleDropdown ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={COLORS.placeholder}
+          />
+        </TouchableOpacity>
+
+        {showVehicleDropdown && (
+          <View style={styles.dropdownMenu}>
+            {vehicleOptions.map((option) => {
+              const isSelected = option.value === activeVehicle;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.dropdownItem, isSelected && styles.dropdownItemSelected]}
+                  onPress={() => handleVehicleSelect(option.value)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.dropdownItemText, isSelected && styles.dropdownItemTextSelected]}>
+                    {option.label}
+                  </Text>
+                  {isSelected && (
+                    <MaterialCommunityIcons name="check" size={18} color={COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      {/* --- KYC --- */}
+      <SectionTitle style={{ marginTop: 25 }}>Vérification KYC</SectionTitle>
+      <View style={styles.kycCard}>
+        <View style={styles.kycHeader}>
+          <View style={[styles.kycBadge, { backgroundColor: `${currentKyc.color}1A` }]}>
+            <MaterialCommunityIcons name={currentKyc.icon} size={16} color={currentKyc.color} />
+            <Text style={[styles.kycBadgeText, { color: currentKyc.color }]}>{currentKyc.label}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.kycMessage}>{currentKyc.message}</Text>
+
+        <TouchableOpacity
+          style={styles.kycCta}
+          activeOpacity={0.85}
+          onPress={() => Alert.alert('KYC', 'Ouverture de la gestion des documents KYC...')}
+        >
+          <Text style={styles.kycCtaText}>{currentKyc.cta}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
 
       {/* --- SECTION PARRAINAGE --- */}
       <TouchableOpacity style={styles.inviteBox} onPress={handleInvite}>
@@ -183,6 +290,104 @@ const styles = StyleSheet.create({
   statusText: { color: COLORS.primary, fontSize: 10, fontWeight: 'bold' },
 
   // Parrainage
+  dropdownContainer: {
+    marginTop: 10,
+  },
+  dropdownTrigger: {
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    minHeight: 52,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownTriggerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dropdownTriggerText: {
+    color: COLORS.secondary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  dropdownMenu: {
+    marginTop: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    minHeight: 46,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#F8F9FF',
+  },
+  dropdownItemText: {
+    color: COLORS.secondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownItemTextSelected: {
+    fontWeight: '700',
+  },
+  kycCard: {
+    marginTop: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 15,
+  },
+  kycHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  kycBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  kycBadgeText: {
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  kycMessage: {
+    marginTop: 12,
+    color: COLORS.secondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  kycCta: {
+    marginTop: 14,
+    backgroundColor: COLORS.secondary,
+    borderRadius: 10,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  kycCtaText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '700',
+  },
   inviteBox: { 
     backgroundColor: COLORS.white, 
     marginTop: 20, 

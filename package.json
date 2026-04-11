@@ -13,8 +13,5 @@
     "mobile:start": "corepack pnpm --filter gomileapp start",
     "mobile:lan": "corepack pnpm --filter gomileapp start -- --lan",
     "mobile:tunnel": "corepack pnpm --filter gomileapp start -- --tunnel"
-  },
-  "dependencies": {
-    "react-native-maps": "^1.27.2"
   }
 }
