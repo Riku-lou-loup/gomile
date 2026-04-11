@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, Switch, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Circle } from 'react-native-maps'; // Nécessite l'install de react-native-maps
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Tes composants
 import Header from '../components/Header';
-import { COLORS, SIZES } from '../constants/theme';
+import { COLORS } from '../constants/theme';
+import { useAvailabilityStore } from '../store/useAvailabilityStore';
 
 const { width, height } = Dimensions.get('window');
 
 export default function DashboardScreen({ navigation }) {
-  const [isOnline, setIsOnline] = useState(false);
+  const isOnline = useAvailabilityStore((state) => state.isOnline);
   
   // Simulation de la position du livreur (Paris par exemple)
   const [region, setRegion] = useState({
@@ -23,7 +24,7 @@ export default function DashboardScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Header avec bouton toggle intégré ou au-dessus */}
-      <Header title="TABLEAU DE BORD" />
+      <Header title="TABLEAU DE BORD" showAvailabilityToggle />
 
       {/* CARTE TEMPS RÉEL */}
       <MapView
@@ -51,11 +52,10 @@ export default function DashboardScreen({ navigation }) {
               {isOnline ? 'Prêt à recevoir des missions' : 'Passez en ligne pour livrer'}
             </Text>
           </View>
-          <Switch
-            value={isOnline}
-            onValueChange={setIsOnline}
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={COLORS.white}
+          <MaterialCommunityIcons
+            name={isOnline ? 'toggle-switch' : 'toggle-switch-off-outline'}
+            size={34}
+            color={isOnline ? '#4CAF50' : COLORS.placeholder}
           />
         </View>
       </View>

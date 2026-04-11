@@ -35,7 +35,7 @@ export default function MissionsScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <FormLayout title="MISSIONS">
+      <FormLayout title="MISSIONS" showAvailabilityToggle>
         
         {/* 1. ÉTAT : COMPTE NON VALIDÉ */}
         {!isAccountValidated && (

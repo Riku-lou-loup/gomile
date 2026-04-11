@@ -9,12 +9,12 @@ import {
 import Header from './Header';
 import { COLORS, SIZES } from '../constants/theme';
 
-export default function FormLayout({ title, children, variant = 'form' }) {
+export default function FormLayout({ title, children, variant = 'form', showAvailabilityToggle = false }) {
   const isLogin = variant === 'login';
 
   return (
     <View style={styles.container}>
-      <Header title={title} />
+      <Header title={title} showAvailabilityToggle={showAvailabilityToggle} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={{ flex: 1 }}

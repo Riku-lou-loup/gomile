@@ -29,7 +29,7 @@ export default function WalletScreen({ navigation }) {
   };
 
   return (
-    <FormLayout title="MON PORTEFEUILLE">
+    <FormLayout title="MON PORTEFEUILLE" showAvailabilityToggle>
       
       {/* --- CARTE DE SOLDE (Composant réutilisé) --- */}
       <BalanceCard 
