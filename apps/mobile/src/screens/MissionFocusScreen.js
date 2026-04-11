@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import GoMileButton from '../components/GoMileButton';
 import GoMileInput from '../components/GoMileInput';
 import { COLORS } from '../constants/theme';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
 import { useMissionStore } from '../store/useMissionStore';
 import { formatDistanceKm, formatDurationMin, getDrivingRoute } from '../../lib/routing';
 
@@ -246,8 +247,8 @@ export default function MissionFocusScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  map: { flex: 1 },
+  container: { ...COMMON_STYLE_VALUES.screenContainer },
+  map: { ...COMMON_STYLE_VALUES.flex1 },
   bottomPanel: {
     position: 'absolute',
     left: 0,
@@ -276,8 +277,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   panelHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...COMMON_STYLE_VALUES.rowCenter,
     gap: 8,
   },
   panelContent: {
@@ -288,8 +288,8 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 24,
   },
-  title: { color: COLORS.secondary, fontWeight: '900', fontSize: 16 },
-  subTitle: { marginTop: 4, color: COLORS.placeholder, fontSize: 12 },
+  title: { ...COMMON_STYLE_VALUES.textSecondary, fontWeight: '900', fontSize: 16 },
+  subTitle: { marginTop: 4, ...COMMON_STYLE_VALUES.textMuted, fontSize: 12 },
   backToMissionsBtn: {
     minHeight: 38,
     paddingHorizontal: 10,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FCFCFC',
   },
   disabledBox: { opacity: 0.55 },
-  codeLabel: { color: COLORS.secondary, fontWeight: '700', marginBottom: 8, fontSize: 12 },
+  codeLabel: { ...COMMON_STYLE_VALUES.textSecondary, fontWeight: '700', marginBottom: 8, fontSize: 12 },
   codeValue: {
     color: COLORS.primary,
     fontWeight: '900',
@@ -316,12 +316,12 @@ const styles = StyleSheet.create({
   },
   routeMeta: {
     textAlign: 'center',
-    color: COLORS.placeholder,
+    ...COMMON_STYLE_VALUES.textMuted,
     fontSize: 12,
     marginBottom: 10,
   },
   doneBtn: { backgroundColor: '#2E7D32' },
-  emptyState: { flex: 1, padding: 20, justifyContent: 'center' },
-  emptyTitle: { color: COLORS.secondary, fontWeight: '800', fontSize: 18, textAlign: 'center' },
-  emptyDesc: { color: COLORS.placeholder, textAlign: 'center', marginVertical: 12 },
+  emptyState: { ...COMMON_STYLE_VALUES.flex1, padding: 20, justifyContent: 'center' },
+  emptyTitle: { ...COMMON_STYLE_VALUES.textSecondary, fontWeight: '800', fontSize: 18, textAlign: 'center' },
+  emptyDesc: { ...COMMON_STYLE_VALUES.textMuted, textAlign: 'center', marginVertical: 12 },
 });
