@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
@@ -67,6 +67,9 @@ export class StoreService {
         address: dto.address,
         latitude: dto.latitude,
         longitude: dto.longitude,
+        domain: dto.domain,
+        provider: dto.provider,
+        webhookUrl: dto.webhookUrl,
       },
     });
 
@@ -78,7 +81,13 @@ export class StoreService {
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
-    await this.verifyOwnership(merchantId, storeId);
+    const existing = await this.verifyOwnership(merchantId, storeId);
+
+    // If provider is being set, ensure domain is present (in the request or already in DB)
+    if (dto.provider !== undefined && !dto.domain && !existing.domain) {
+      throw new BadRequestException(createApiError('DOMAIN_REQUIRED_WITH_PROVIDER', STORE_ERRORS));
+    }
+
     const response = await this.prisma.store.update ({
       where: {id : storeId},
       data: {
@@ -86,7 +95,10 @@ export class StoreService {
         description: dto.description,
         address: dto.address,
         latitude: dto.latitude,
-        longitude: dto.longitude
+        longitude: dto.longitude,
+        domain: dto.domain,
+        provider: dto.provider,
+        webhookUrl: dto.webhookUrl,
       },
     });
     return {name: response.name, id: response.id, message: STORE_MESSAGES.STORE_UPDATED}

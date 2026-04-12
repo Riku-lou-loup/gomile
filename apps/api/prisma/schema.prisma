@@ -41,6 +41,11 @@ enum WalletEntryStatus {
   CANCELLED
 }
 
+enum StoreProvider {
+  WOOCOMMERCE
+  SHOPIFY
+  OTHER
+}
 
 enum Gender {
   MALE
@@ -111,18 +116,21 @@ model Merchant {
 }
 
 model MerchantApiKey {
-  id          String  @id @default(uuid()) @db.Uuid
-  merchantId  String  @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  merchantId  String    @db.Uuid
+  storeId     String    @db.Uuid
   name        String
-  keyHash     String  @unique
+  keyHash     String    @unique
   createdAt   DateTime  @default(now())
   revokedAt   DateTime?
+  expiresAt   DateTime?
 
   merchant Merchant @relation(fields: [merchantId], references: [userId], onDelete: Cascade)
-  
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
   @@index([merchantId])
+  @@index([storeId])
   @@index([revokedAt])
-  
 }
 
 model Store {
@@ -137,8 +145,13 @@ model Store {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  merchant Merchant @relation(fields: [merchantId], references: [userId])
+  domain     String?
+  provider   StoreProvider?
+  webhookUrl String?
+
+  merchant Merchant         @relation(fields: [merchantId], references: [userId])
   orders   Order[]
+  apiKeys  MerchantApiKey[]
 
   @@index([merchantId])
 }

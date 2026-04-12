@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
-
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl, ValidateIf } from "class-validator";
+import { StoreProvider } from "@prisma/client";
 
 export class CreateStoreDto {
     @ApiProperty({ description: "The name of the store" , example: "Riku's pet shop", type: 'string'})
@@ -27,4 +27,20 @@ export class CreateStoreDto {
     @IsNumber()
     @IsNotEmpty()
     longitude: number;
+
+    @ApiProperty({ description: "Domain of the store (for plugin validation)", example: "myshop.com", required: false, type: 'string' })
+    @IsString()
+    @IsOptional()
+    @ValidateIf(o => o.provider !== undefined) // domain and provider must be declared together
+    domain?: string;
+
+    @ApiProperty({ description: "E-commerce provider", enum: StoreProvider, required: false })
+    @IsEnum(StoreProvider)
+    @IsOptional()
+    provider?: StoreProvider;
+
+    @ApiProperty({ description: "Webhook URL for order status updates", example: "https://myshop.com/webhooks/gomile", required: false, type: 'string' })
+    @IsUrl()
+    @IsOptional()
+    webhookUrl?: string;
 }
