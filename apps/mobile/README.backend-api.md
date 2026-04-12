@@ -5,15 +5,6 @@ Salut Dang,
 je te fais un brief direct pour que le mobile fonctionne .
 L'idee: t'as une checklist API + une checklist DB.
 
-## Priorite sprint
-
-1. Auth propre (login, refresh, logout)
-2. Register driver complet (les 4 etapes)
-3. Dashboard + Missions
-4. Wallet + Profil
-5. Upload docs et KYC
-
----
 
 ## 1) Auth
 
