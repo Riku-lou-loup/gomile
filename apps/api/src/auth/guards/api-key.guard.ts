@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiKeyService, MerchantApiPrincipal } from '../api-key.service';
-import { createApiError } from '../auth-errors';
+import { createApiError } from '../../common/api-error';
+import { AUTH_ERRORS } from '../auth-errors';
 
 type ApiKeyRequest = Request & { merchantApi?: MerchantApiPrincipal };
 
@@ -22,7 +23,7 @@ export class ApiKeyGuard implements CanActivate {
         
         // If no API key is provided, deny access   
         if (!rawKey) {
-            throw new UnauthorizedException(createApiError('INVALID_API_KEY'));
+            throw new UnauthorizedException(createApiError('INVALID_API_KEY', AUTH_ERRORS));
         }
         request.merchantApi = await this.apiKeyService.validateApiKey(rawKey);
         return true;
