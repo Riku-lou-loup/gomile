@@ -48,6 +48,10 @@ export const API_ERRORS = {
     statusCode: 403,
     message: "Vous n'etes pas le proprietaire de cette ressource",
   },
+  API_KEY_EXPIRED: {
+    statusCode: 401,
+    message: 'Clef API expiree',
+  },
   // Store
   STORE_NOT_FOUND: {
     statusCode: 404,
@@ -56,6 +60,10 @@ export const API_ERRORS = {
   STORE_NAME_ALREADY_USED: {
     statusCode: 409,
     message: 'Nom de magasin deja utilise',
+  },
+  DOMAIN_REQUIRED_WITH_PROVIDER: {
+    statusCode: 400,
+    message: "Un domaine est requis lorsqu'un fournisseur est specifie",
   },
   // Generic
   BACKEND_UNREACHABLE: {

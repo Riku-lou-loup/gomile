@@ -1,24 +1,39 @@
+export type StoreProvider = 'WOOCOMMERCE' | 'SHOPIFY' | 'OTHER';
+
 export interface CreateStoreInput {
   name: string;
+  description?: string;
   address: string;
   latitude: number;
   longitude: number;
+  domain?: string;
+  provider?: StoreProvider;
+  webhookUrl?: string;
 }
 
 export interface UpdateStoreInput {
   name?: string;
+  description?: string;
   address?: string;
   latitude?: number;
   longitude?: number;
+  domain?: string;
+  provider?: StoreProvider;
+  webhookUrl?: string;
 }
 
 export interface StoreResponse {
   id: string;
   merchantId: string;
   name: string;
+  description: string | null;
+  isActive: boolean;
   address: string;
   latitude: number;
   longitude: number;
+  domain: string | null;
+  provider: StoreProvider | null;
+  webhookUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
