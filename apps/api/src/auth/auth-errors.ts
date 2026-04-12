@@ -46,6 +46,10 @@ export const AUTH_ERRORS = {
   USER_NOT_FOUND: {
     statusCode: 404,
     message: 'Utilisateur non existant'
+  },
+  API_KEY_EXPIRED: {
+    statusCode: 401,
+    message: 'Clef API expiree'
   }
 } as const;
 

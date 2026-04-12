@@ -68,17 +68,31 @@ describe('DeliveryPricingController', () => {
         const auth = registerResponse.body;
         const accessToken = registerResponse.body.accessToken;
 
+        // create a store
+        const storeRes = await request(app.getHttpServer())
+            .post(`/merchants/${auth.user.id}/stores`)
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send({
+                name: 'Test Store',
+                address: 'Allee Condillac, 38400 Grenoble',
+                latitude: 45.18,
+                longitude: 5.72,
+            })
+            .expect(HttpStatus.CREATED);
+
+        const storeId = storeRes.body.id;
+
         // create the API key in the database with the hashed value
         const apiKey1 = await request(app.getHttpServer())
             .post(`/merchants/${auth.user.id}/api-keys`)
             .set('Authorization', `Bearer ${accessToken}`)
-            .send({ name: 'Test API Key' })
+            .send({ name: 'Test API Key', storeId })
             .expect(HttpStatus.CREATED);
 
         const apiKey2 = await request(app.getHttpServer())
             .post(`/merchants/${auth.user.id}/api-keys`)
             .set('Authorization', `Bearer ${accessToken}`)
-            .send({ name: 'Revoked API Key' })
+            .send({ name: 'Revoked API Key', storeId })
             .expect(HttpStatus.CREATED);
 
         await request(app.getHttpServer())

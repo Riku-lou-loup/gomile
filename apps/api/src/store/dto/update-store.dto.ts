@@ -1,31 +1,45 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { IsArray, IsOptional, IsNumber, IsString, ValidateNested, IsNotEmpty } from "class-validator";
-
+import { IsEnum, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
+import { StoreProvider } from "@prisma/client";
 
 export class UpdateStoreDto {
-    @ApiProperty({ description: "The name of the store" , example: "Riku's pet shop", type: 'string'})
+    @ApiProperty({ description: "The name of the store" , example: "Riku's pet shop", type: 'string', required: false })
     @IsString()
     @IsOptional()
-    name: string;
+    name?: string;
 
     @ApiProperty({ description: "The description of the store", required: false, type: 'string' })
     @IsString()
     @IsOptional()
     description?: string;
 
-    @ApiProperty({ description: "Address of the store", example: "25 boulevard Clémenceau, 38100 Grenoblel" , type: 'string'})
+    @ApiProperty({ description: "Address of the store", example: "25 boulevard Clémenceau, 38100 Grenoblel", type: 'string', required: false })
     @IsString()
     @IsOptional()
-    address: string;
+    address?: string;
 
-    @ApiProperty({ description: "The latitude of the store's location", example: 45.188529 , type: 'number'})
+    @ApiProperty({ description: "The latitude of the store's location", example: 45.188529, type: 'number', required: false })
     @IsNumber()
     @IsOptional()
-    latitude: number;
+    latitude?: number;
 
-    @ApiProperty({ description: "The longitude of the store's location", example: 5.724524 , type: 'number'})
+    @ApiProperty({ description: "The longitude of the store's location", example: 5.724524, type: 'number', required: false })
     @IsNumber()
     @IsOptional()
-    longitude: number;
+    longitude?: number;
+
+    @ApiProperty({ description: "Domain of the store (for plugin validation)", example: "mylittleshop.com", required: false, type: 'string' })
+    @IsString()
+    @IsOptional()
+    domain?: string;
+
+    @ApiProperty({ description: "E-commerce provider", enum: StoreProvider, required: false })
+    @IsEnum(StoreProvider)
+    @IsOptional()
+    provider?: StoreProvider;
+
+    @ApiProperty({ description: "Webhook URL for order status updates", example: "https://myshop.com/webhooks/gomile", required: false, type: 'string' })
+    @IsUrl()
+    @IsOptional()
+    webhookUrl?: string;
 }

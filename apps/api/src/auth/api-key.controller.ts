@@ -1,23 +1,25 @@
 import {
-    Controller, 
-    Post, 
-    Body, 
+    Controller,
+    Post,
+    Patch,
+    Body,
     UseGuards,
     HttpCode,
     HttpStatus,
     Param,
     Get,
+    Query
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiKeyService } from './api-key.service';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
 import { CreateApiKeyResponseDto } from './dto/create-api-key-response.dto';
+import { UpdateApiKeyDto } from './dto/update-api-key.dto';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './auth.types';
 
 @ApiTags('api-keys')
@@ -40,7 +42,7 @@ export class ApiKeyController {
         @Body() dto: CreateApiKeyDto,
     ): Promise<CreateApiKeyResponseDto> {
 
-        const newApiKey = await this.apiKeyService.createApiKey(user, merchantId, dto.name);
+        const newApiKey = await this.apiKeyService.createApiKey(user, merchantId, dto.storeId, dto.name, dto.expiresAt);
         return {
             id: newApiKey.apiKeyId,
             name: dto.name,
@@ -57,10 +59,41 @@ export class ApiKeyController {
     @Get()
     @HttpCode(HttpStatus.OK)
     async listApiKeys(
-        @Param('merchantId') merchantId: string, 
-        @CurrentUser() user: AuthenticatedUser
+        @Param('merchantId') merchantId: string,
+        @CurrentUser() user: AuthenticatedUser,
     ) {
         return this.apiKeyService.listApiKeys(user, merchantId);
+    }
+
+    @ApiOperation({ summary: 'Get a single API key detail' })
+    @ApiOkResponse({ description: 'API key detail retrieved successfully' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth('access-token')
+    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Get(':apiKeyId')
+    @HttpCode(HttpStatus.OK)
+    async getApiKey(
+        @Param('merchantId') merchantId: string,
+        @Param('apiKeyId') apiKeyId: string,
+        @CurrentUser() user: AuthenticatedUser,
+    ) {
+        return this.apiKeyService.getApiKey(user, merchantId, apiKeyId);
+    }
+
+    @ApiOperation({ summary: 'Update an API key name or expiration' })
+    @ApiOkResponse({ description: 'API key updated successfully' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth('access-token')
+    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Patch(':apiKeyId')
+    @HttpCode(HttpStatus.OK)
+    async updateApiKey(
+        @Param('merchantId') merchantId: string,
+        @Param('apiKeyId') apiKeyId: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: UpdateApiKeyDto,
+    ) {
+        return this.apiKeyService.updateApiKey(user, merchantId, apiKeyId, dto.name, dto.expiresAt);
     }
 
     @ApiOperation({ summary: 'Revoke an API key' })
@@ -73,7 +106,7 @@ export class ApiKeyController {
     async revokeApiKey(
         @Param('merchantId') merchantId: string,
         @Param('apiKeyId') apiKeyId: string, 
-        @CurrentUser() user: AuthenticatedUser
+        @CurrentUser() user: AuthenticatedUser,
     ) {
         await this.apiKeyService.revokeApiKey(apiKeyId, user, merchantId);
     }
