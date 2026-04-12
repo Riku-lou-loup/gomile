@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { KycModule } from './kyc/kyc.module';
 import { DeliveryPricingModule } from './delivery/delivery-pricing.module';
 import { RedisModule } from './redis/redis.module';
+import { StoreModule } from './store/store.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RedisModule } from './redis/redis.module';
     KycModule,
     DeliveryPricingModule,
     RedisModule,
+    StoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],
