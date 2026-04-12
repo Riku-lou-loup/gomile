@@ -21,7 +21,7 @@ export class KycService {
         },
       }),
       this.prisma.driver.update({
-        where: { id: driver.id },
+        where: { userId: driver.userId },
         data: { kycStatus: KycStatus.ACCEPTED },
       })
     ]);
@@ -42,7 +42,7 @@ export class KycService {
         },
       }),
       this.prisma.driver.update({
-        where: { id: driver.id },
+        where: { userId: driver.userId },
         data: { kycStatus: KycStatus.REJECTED },
       }),
     ])
@@ -52,7 +52,7 @@ export class KycService {
   // find submission
   private async findPendingSubmission(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
-      where: { id: driverId },
+      where: { userId: driverId },
       include: {
         kycSubmissions: {
           where: { status: KycStatus.PENDING },
