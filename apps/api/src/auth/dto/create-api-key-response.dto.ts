@@ -1,6 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AUTH_MESSAGES } from '../auth-messages';
-import { format } from 'path';
 
 export class CreateApiKeyResponseDto {
     @ApiProperty({
