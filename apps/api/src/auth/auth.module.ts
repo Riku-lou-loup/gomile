@@ -8,6 +8,8 @@ import { RolesGuard } from "./guards/roles.guard";
 import { ApiKeyGuard } from './guards/api-key.guard';
 import { ApiKeyService } from './api-key.service';
 import { ApiKeyController } from './api-key.controller';
+import { JwtOrApiKeyGuard } from './guards/jwt-or-api-key.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 
 @Module({
@@ -18,9 +20,11 @@ import { ApiKeyController } from './api-key.controller';
     JwtRefreshStrategy, 
     RolesGuard, 
     ApiKeyGuard,
-    ApiKeyService
+    ApiKeyService,
+    JwtOrApiKeyGuard,
+    JwtAuthGuard
   ], // adding guard provider for nest
   controllers: [AuthController, ApiKeyController],
-  exports: [AuthService, ApiKeyGuard, ApiKeyService],
+  exports: [AuthService, ApiKeyGuard, ApiKeyService, JwtOrApiKeyGuard],
 })
 export class AuthModule {}
