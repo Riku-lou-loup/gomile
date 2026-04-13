@@ -38,11 +38,11 @@ export class StoreService {
     if (!store) {
       throw new NotFoundException(createApiError('STORE_NOT_FOUND', STORE_ERRORS));
     };
+    return store;
   }
 
   // Verify ownership of a merchant over a store
   private async verifyOwnership(merchantId: string, storeId: string) {
-    await this.existsStore(storeId);
     const response = await this.prisma.store.findFirst({
       where: { id: storeId, merchantId },
     });
@@ -54,11 +54,10 @@ export class StoreService {
 
   // Create stores 
   async createStore(user: AuthenticatedUser, merchantId: string, dto: CreateStoreDto): Promise<CreateStoreResponseDto> {
+    await this.existsMerchant(merchantId)
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
-
-    await this.existsMerchant(merchantId);
     const store = await this.prisma.store.create({
       data : {
         name: dto.name,
@@ -81,6 +80,7 @@ export class StoreService {
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
+    await this.existsStore(storeId);
     const existing = await this.verifyOwnership(merchantId, storeId);
 
     // If provider is being set, ensure domain is present (in the request or already in DB)
@@ -106,9 +106,11 @@ export class StoreService {
 
   // Disable store
   async disableStore(user: AuthenticatedUser, merchantId : string, storeId :string): Promise<UpdateStoreResponseDto> {
+    await this.existsMerchant(merchantId);
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
+    await this.existsStore(storeId);
     await this.verifyOwnership(merchantId, storeId);
     const response = await this.prisma.store.update ({
       where: {
@@ -123,9 +125,11 @@ export class StoreService {
 
   // Enable store
   async enableStore(user: AuthenticatedUser, merchantId: string, storeId: string): Promise<UpdateStoreResponseDto> {
+    await this.existsMerchant(merchantId);
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
+    await this.existsStore(storeId);
     await this.verifyOwnership(merchantId, storeId);
     const response = await this.prisma.store.update({
       where: {
@@ -140,9 +144,11 @@ export class StoreService {
 
   // Delete store
   async deleteStore(user: AuthenticatedUser, merchantId: string, storeId: string): Promise<DeleteStoreResponseDto> {
+    await this.existsMerchant(merchantId);
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
+    await this.existsStore(storeId);
     await this.verifyOwnership(merchantId, storeId);
     await this.prisma.store.delete({
       where: {
@@ -154,10 +160,10 @@ export class StoreService {
 
   // List stores
   async listStore(user: AuthenticatedUser, merchantId: string, isActive?: boolean) {
+    await this.existsMerchant(merchantId);    
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
-    await this.existsMerchant(merchantId);
     return this.prisma.store.findMany({
       where: {
         merchantId,
@@ -174,6 +180,8 @@ export class StoreService {
 
   // Get store
   async getStore(user: AuthenticatedUser, merchantId: string, storeId: string) {
+    await this.existsMerchant(merchantId);
+    await this.existsStore(storeId);
     if (user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS));
     }
