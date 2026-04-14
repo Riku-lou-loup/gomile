@@ -20,7 +20,8 @@ import { randomInt } from 'crypto'
 export class OrderService  {
   constructor(private prisma: PrismaService) {
   }
-
+  private handshakeTTL = 12 * 60 * 60 * 1000; // 12h for short deliveries, or maybe less 
+  
   // Verify existant of the merchant
   private async existsMerchant(merchantId: string): Promise<Merchant> {
     const merchant = await this.prisma.merchant.findUnique({
@@ -94,7 +95,7 @@ export class OrderService  {
     await this.verifyStoreOwnership(merchantId, storeId);
     const pickupCode = randomInt(0, 1000000).toString().padStart(6, '0');
     const deliveryCode = randomInt(0, 1000000).toString().padStart(6, '0');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + this.handshakeTTL);
 
     const order = await this.prisma.order.create({
       data: {
