@@ -13,10 +13,16 @@ import {
 } from '@nestjs/common'
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { StoreService } from './store.service';
@@ -30,76 +36,91 @@ import { Role } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { UpdateStoreResponseDto } from './dto/update-store.response.dto';
+import { DeleteStoreResponseDto } from './dto/delete-store-response.dto';
+import { GetStoreResponseDto } from './dto/get-store-response.dto';
+import { ListStoresResponseDto } from './dto/list-stores-response.dto';
+
 @ApiTags('Store')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('merchants/:merchantId/stores')
 export class StoreController {
-  constructor(private readonly storeService: StoreService) {
-  } 
+  constructor(private readonly storeService: StoreService) {}
 
-  @ApiOperation({summary: 'Create a store for a given Marchant'})
-  @ApiOkResponse({type: CreateStoreDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Create a store', description: 'If provider is set, domain is required.' })
+  @ApiBody({ type: CreateStoreDto })
+  @ApiCreatedResponse({ type: CreateStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
+  @ApiNotFoundResponse({ description: 'Merchant not found' })
+  @ApiConflictResponse({ description: 'Provider set without a domain' })
   @Roles(Role.MERCHANT)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createStore(    
+  async createStore(
     @Param('merchantId') merchantId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateStoreDto
-    ): Promise<CreateStoreResponseDto> {
-      return await this.storeService.createStore(user, merchantId, dto);
+  ): Promise<CreateStoreResponseDto> {
+    return await this.storeService.createStore(user, merchantId, dto);
   }
 
-  @ApiOperation({summary: 'Update a store'})
-  @ApiOkResponse({type: UpdateStoreDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update a store' })
+  @ApiBody({ type: UpdateStoreDto })
+  @ApiOkResponse({ type: UpdateStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this store' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
+  @ApiConflictResponse({ description: 'Provider set without a domain on the store' })
   @Roles(Role.MERCHANT)
   @Patch(':storeId')
+  @HttpCode(HttpStatus.OK)
   async updateStore(
-    @Param('merchantId')  merchantId: string,
-    @Param('storeId')  storeId: string,
-    @CurrentUser() user : AuthenticatedUser,
-    @Body() dto : UpdateStoreDto
-  ) : Promise<UpdateStoreResponseDto>{
+    @Param('merchantId') merchantId: string,
+    @Param('storeId') storeId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateStoreDto
+  ): Promise<UpdateStoreResponseDto> {
     return this.storeService.updateStore(user, merchantId, storeId, dto);
   }
 
-  @ApiOperation({summary: 'Disable a store (no longer accepts services)'})
-  @ApiOkResponse({type: UpdateStoreDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Disable a store', description: 'Store will no longer accept new orders.' })
+  @ApiOkResponse({ type: UpdateStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this store' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
   @Roles(Role.MERCHANT)
   @Post(':storeId/disable')
   @HttpCode(HttpStatus.OK)
   async disableStore(
-    @Param('merchantId')  merchantId: string,
-    @Param('storeId')  storeId: string,
-    @CurrentUser() user : AuthenticatedUser,
-  ) : Promise<UpdateStoreResponseDto>{
+    @Param('merchantId') merchantId: string,
+    @Param('storeId') storeId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<UpdateStoreResponseDto> {
     return this.storeService.disableStore(user, merchantId, storeId);
   }
 
-  @ApiOperation({summary: 'Re-enable a store'})
-  @ApiOkResponse({type: UpdateStoreDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Re-enable a store', description: 'Store will start accepting orders again.' })
+  @ApiOkResponse({ type: UpdateStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this store' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
   @Roles(Role.MERCHANT)
   @Post(':storeId/enable')
   @HttpCode(HttpStatus.OK)
   async enableStore(
-    @Param('merchantId')  merchantId: string,
-    @Param('storeId')  storeId: string,
-    @CurrentUser() user : AuthenticatedUser,
-  ) : Promise<UpdateStoreResponseDto>{
+    @Param('merchantId') merchantId: string,
+    @Param('storeId') storeId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<UpdateStoreResponseDto> {
     return this.storeService.enableStore(user, merchantId, storeId);
   }
 
-  @ApiOperation({summary: 'Delete a store'})
-  @ApiOkResponse()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete a store', description: 'Permanent deletion. Cannot delete a store with active orders.' })
+  @ApiOkResponse({ type: DeleteStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this store' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
   @Roles(Role.MERCHANT)
   @Delete(':storeId')
   @HttpCode(HttpStatus.OK)
@@ -111,15 +132,15 @@ export class StoreController {
     return this.storeService.deleteStore(user, merchantId, storeId);
   }
 
-  @ApiOperation({summary: 'List all stores for a merchant'})
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
-  @ApiOkResponse()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
-  @Roles(Role.MERCHANT)
+  @ApiOperation({ summary: 'List all stores for a merchant', description: 'Merchants can only list their own stores. Admins can list stores for any merchant because its the admin' })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active/inactive status' })
+  @ApiOkResponse({ type: ListStoresResponseDto, isArray: true })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
+  @ApiNotFoundResponse({ description: 'Merchant not found' })
+  @Roles(Role.MERCHANT, Role.ADMIN)
   @Get()
   @HttpCode(HttpStatus.OK)
-
   async listStores(
     @Param('merchantId') merchantId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -129,10 +150,11 @@ export class StoreController {
     return this.storeService.listStore(user, merchantId, filter);
   }
 
-  @ApiOperation({summary: 'Retrieve a specific store'})
-  @ApiOkResponse()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get a specific store' })
+  @ApiOkResponse({ type: GetStoreResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this store' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
   @Roles(Role.MERCHANT)
   @Get(':storeId')
   @HttpCode(HttpStatus.OK)
