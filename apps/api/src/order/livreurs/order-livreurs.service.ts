@@ -1,16 +1,16 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, OrderStatus, Role } from "@prisma/client";
+import { UnauthorizedException, ConflictException, ForbiddenException, GoneException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Prisma, OrderStatus, Role, HandshakeType } from "@prisma/client";
 import { AuthenticatedUser } from "../../auth/auth.types";
 import { createApiError } from "../../common/api-error";
 import { PrismaService } from "../../prisma/prisma.service";
 import { AUTH_ERRORS } from "../../auth/auth-errors";
 import { ORDER_ERRORS } from "../order-errors";
 import { ListDriverOrdersResponseDto } from "../dto/list-livreurs-orders-response";
+import { ORDER_MESSAGE } from "../order-messages";
 
 @Injectable()
 export class OrderLivreursService {
   constructor(private prisma: PrismaService) {}
-
   private async existsDriver(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { userId: driverId },
@@ -27,6 +27,19 @@ export class OrderLivreursService {
     });
     if (!order) {
       throw new NotFoundException(createApiError('ORDER_NOT_FOUND', ORDER_ERRORS));
+    }
+    return order;
+  }
+
+  private async verifyOrderOwnership(driverId: string, orderId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        driverId : driverId,
+        id: orderId
+      }
+    })
+    if (!order) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
     return order;
   }
@@ -92,8 +105,87 @@ export class OrderLivreursService {
     if (result.count === 0) {
       await this.existsOrder(orderId);
       throw new ConflictException(createApiError('ORDER_ALREADY_TAKEN', ORDER_ERRORS));
-    }
+    };
 
     return { message: "Commande acceptee avec succes" };
+  }
+
+  async pickupOrder(user: AuthenticatedUser, driverId: string, orderId: string, pickupCode: string) {
+    await this.existsDriver(driverId);
+    if (user.id !== driverId) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
+    };
+    const order = await this.existsOrder(orderId);
+    
+    if (order.status !== OrderStatus.DRIVER_ACCEPTED) {
+      throw new ConflictException(createApiError('ORDER_PICKUP_NO_LONGER_AVAILABLE', ORDER_ERRORS))
+    };
+    
+    if (order.driverId !== driverId) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
+    };
+
+    const handshake = await this.prisma.handshake.findUnique({
+      where: {
+        orderId_type: {
+          orderId,
+          type: HandshakeType.A
+        },
+      },
+    });
+
+    if (!handshake) {
+      throw new InternalServerErrorException(createApiError('HANDSHAKE_NOT_FOUND', ORDER_ERRORS));
+    };
+
+    const remainingAttemps = handshake.remainingAttemps;
+
+    if (handshake.expiresAt.getTime() < Date.now()) {
+      throw new GoneException(createApiError('HANDSHAKE_EXPIRED', ORDER_ERRORS));
+    };
+
+    if (remainingAttemps === 0) {
+      throw new HttpException(createApiError('HANDSHAKE_ATTEMPTS_PASSED', ORDER_ERRORS), 429);
+    };
+
+    // Check database if code is correct
+    if (handshake.code !== pickupCode) {
+      // decrease attemps
+      await this.prisma.handshake.update({
+        where: {
+          orderId_type :{
+            orderId,
+            type: HandshakeType.A
+          }
+        },
+        data: {
+          remainingAttemps: remainingAttemps-1
+        }
+      });
+      throw new UnauthorizedException(createApiError('INCORRECT_HANDSHAKE_CODE', ORDER_ERRORS));
+    }
+    const today = new Date()
+    // Change handshake signature
+    await this.prisma.handshake.update({
+      where: {
+        orderId_type: {
+          orderId,
+          type: HandshakeType.A
+        },
+      }, data: {
+        verifiedAt: today
+      }
+    });
+    // And update order as well
+    await this.prisma.order.update({
+      where: {
+        id: orderId
+      },
+      data: {
+        pickedUpAt: today,
+        status: OrderStatus.PICKED_UP
+      }
+    });
+    return { orderId: orderId, message: 'Order picked up successfully', pickedUpAt: today};
   }
 }

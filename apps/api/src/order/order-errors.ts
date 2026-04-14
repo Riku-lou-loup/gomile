@@ -18,6 +18,26 @@ export const ORDER_ERRORS  = {
   ORDER_ALREADY_TAKEN : {
     statusCode: 409,
     message: "Cette commande a deja ete acceptee par un autre livreur"
+  },
+  ORDER_PICKUP_NO_LONGER_AVAILABLE : {
+    statusCode: 409,
+    message: "Cette commande a deja collectee"
+  },
+  HANDSHAKE_NOT_FOUND : {
+    statusCode: 500,
+    message: "Handshake not found for this order ?!"
+  },
+  HANDSHAKE_ATTEMPTS_PASSED: {
+    statusCode: 429,
+    message: "Vous avez depasse le nombre de tentatives autorisees. Veuillez contacter votre fiable admin"
+  },
+  HANDSHAKE_EXPIRED : {
+    statusCode: 410, // GONE !!!!!! HANDSHAKE IS GONE
+    message: "Handshake has expired"
+  },
+  INCORRECT_HANDSHAKE_CODE : {
+    statusCode: 401,
+    message: "Handshake OTP code incorrect"
   }
 } as const;
 
