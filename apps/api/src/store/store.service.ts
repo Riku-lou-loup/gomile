@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
@@ -10,11 +10,18 @@ import { STORE_MESSAGES } from './store-messages';
 import { CreateStoreResponseDto } from './dto/create-store-response.dto';
 import { DeleteStoreResponseDto } from './dto/delete-store-response.dto';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { OrderStatus, Role } from '@prisma/client';
 
 @Injectable()
 export class StoreService {
     constructor(private prisma: PrismaService) {}
 
+  // Defining statuses that define a store is active
+  private activeStatuses = [
+    OrderStatus.SEARCHING_DRIVER, 
+    OrderStatus.DRIVER_ACCEPTED, 
+    OrderStatus.DRIVER_ASSIGNED, 
+    OrderStatus.PICKED_UP];
   // Verify existant of the merchant
   private async existsMerchant(merchantId: string) {
     const merchant = await this.prisma.merchant.findUnique({
@@ -52,6 +59,23 @@ export class StoreService {
     return response;
   }
 
+  // Verify active orders, check if a store has any ongoing orders or not
+  // Returns the first active order found, not the most recent or anything order
+  // Only to verify if certains actions on a store is allowed or not !!!!!!!!
+  private async verifyActiveOrder(storeId: string) {
+    const ongoingOrder = await this.prisma.order.findFirst ({
+      where: {
+        storeId: storeId,
+        status: {
+          in : this.activeStatuses
+        }
+      }
+    })
+    if (ongoingOrder) {
+      throw new ConflictException(createApiError('STORE_HAS_ACTIVE_ORDERS',STORE_ERRORS))
+    }
+    return ongoingOrder
+  }
   // Create stores 
   async createStore(user: AuthenticatedUser, merchantId: string, dto: CreateStoreDto): Promise<CreateStoreResponseDto> {
     await this.existsMerchant(merchantId)
@@ -112,6 +136,7 @@ export class StoreService {
     }
     await this.existsStore(storeId);
     await this.verifyOwnership(merchantId, storeId);
+    await this.verifyActiveOrder(storeId);
     const response = await this.prisma.store.update ({
       where: {
         id: storeId
@@ -150,6 +175,7 @@ export class StoreService {
     }
     await this.existsStore(storeId);
     await this.verifyOwnership(merchantId, storeId);
+    await this.verifyActiveOrder(storeId);
     await this.prisma.store.delete({
       where: {
         id: storeId
@@ -160,8 +186,7 @@ export class StoreService {
 
   // List stores
   async listStore(user: AuthenticatedUser, merchantId: string, isActive?: boolean) {
-    await this.existsMerchant(merchantId);    
-    if (user.id !== merchantId) {
+    if (user.id !== merchantId || user.role !== Role.ADMIN) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
     return this.prisma.store.findMany({

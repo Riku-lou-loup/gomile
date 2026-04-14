@@ -16,6 +16,10 @@ export const STORE_ERRORS = {
       statusCode: 400,
       message: "Un domaine est requis lorsqu'un fournisseur est specifie",
     },
+    STORE_HAS_ACTIVE_ORDERS: {
+      statusCode: 409,
+      message: "Une ou plusieurs commandes actives, suppression du magasin impossible",
+    }
 
 } as const;
 
