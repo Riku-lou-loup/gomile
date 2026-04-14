@@ -225,11 +225,12 @@ model Handshake {
   orderId String @db.Uuid
 
   type     HandshakeType
-  codeHash String
+  code String
 
   createdAt  DateTime  @default(now())
   verifiedAt DateTime?
   expiresAt  DateTime
+  remainingAttemps    Int @default(3)
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 

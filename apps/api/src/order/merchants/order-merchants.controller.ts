@@ -9,11 +9,11 @@ import {
   Body,
 
  } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiHeader, ApiOkResponse } from "@nestjs/swagger";
+import { ApiBody, ApiOperation, ApiOkResponse, ApiHeader, ApiNotFoundResponse, ApiForbiddenResponse, ApiUnauthorizedResponse, ApiConflictResponse } from "@nestjs/swagger";
 import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from "@nestjs/swagger";
 import { RolesGuard } from "../../auth/guards/roles.guard";
-import { ApiKeyGuard } from "../../auth/guards/api-key.guard"
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
+import { CancelOrderResponseDto } from "../dto/cancel-order-response";
 import { CreateOrderDto } from "../dto/create-order.dto";
 import { CreateOrderResponseDto } from "../dto/create-order-response";
 import { Roles } from "../../auth/decorators/roles.decorator";
@@ -31,9 +31,14 @@ export class OrderMerchantsController {
 
   constructor(private readonly orderService: OrderService) {}
 
-  @ApiOperation({summary: 'Create an order'})
-  @ApiBody({type: CreateOrderDto})
-  @ApiCreatedResponse({type: CreateOrderResponseDto})
+  @ApiOperation({ summary: 'Create an order', description: 'Accepts JWT bearer token or x-api-key header. Returns pickup code (show to merchant) and delivery code (send to customer).' })
+  @ApiHeader({ name: 'x-api-key', description: 'API key scoped to this merchant and store', required: false })
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: CreateOrderDto })
+  @ApiCreatedResponse({ type: CreateOrderResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing credentials' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
+  @ApiNotFoundResponse({ description: 'Merchant or store not found' })
   @UseGuards(JwtOrApiKeyGuard, RolesGuard)
   @Roles(Role.MERCHANT)
   @Post('/stores/:storeId/orders')
@@ -42,15 +47,18 @@ export class OrderMerchantsController {
     @Param('storeId') storeId: string,
     @Param('merchantId') merchantId: string,
     @Body() dto: CreateOrderDto,
-    @CurrentUser() user : AuthenticatedUser
+    @CurrentUser() user: AuthenticatedUser | null
   ) {
     return this.orderService.createOrder(user, storeId, merchantId, dto);
   }
 
-  @ApiOperation({summary: 'Retrieve all orders from a given merchant'})
-  @ApiOkResponse({type: ListMerchantOrdersResponseDto, isArray: true})
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({ summary: 'List all orders for a merchant', description: 'Merchants can only list their own orders. Admins can list orders for any merchant.' })
   @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: ListMerchantOrdersResponseDto, isArray: true })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
+  @ApiNotFoundResponse({ description: 'Merchant not found' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MERCHANT, Role.ADMIN)
   @Get('/orders')
   @HttpCode(HttpStatus.OK)
@@ -61,32 +69,41 @@ export class OrderMerchantsController {
     return this.orderService.getMerchantOrders(user, merchantId);
   }
 
-  @ApiOperation({summary: 'Retrieve a specific order from a given merchant'})
-  @ApiOkResponse({type: GetOrderResponseDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({ summary: 'Get a specific order', description: 'Accepts JWT bearer token or x-api-key header.' })
+  @ApiHeader({ name: 'x-api-key', description: 'API key scoped to this merchant', required: false })
   @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: GetOrderResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing credentials' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this order' })
+  @ApiNotFoundResponse({ description: 'Merchant or order not found' })
+  @UseGuards(JwtOrApiKeyGuard, RolesGuard)
   @Roles(Role.MERCHANT)
   @Get('/orders/:orderId')
   @HttpCode(HttpStatus.OK)
   async getOrder(
     @Param('merchantId') merchantId: string,
     @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthenticatedUser | null
   ) {
     return this.orderService.getOrder(user, merchantId, orderId);
   }
 
-  @ApiOperation({summary: 'Cancel a specific order from a given merchant'})
-  @ApiOkResponse({type: GetOrderResponseDto})
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({ summary: 'Cancel an order', description: 'Accepts JWT bearer token or x-api-key header. Cannot cancel an order that is already picked up, delivered, or cancelled.' })
+  @ApiHeader({ name: 'x-api-key', description: 'API key scoped to this merchant', required: false })
   @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: CancelOrderResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing credentials' })
+  @ApiForbiddenResponse({ description: 'Authenticated user does not own this order' })
+  @ApiNotFoundResponse({ description: 'Merchant or order not found' })
+  @ApiConflictResponse({ description: 'Order is already picked up, delivered, or cancelled' })
+  @UseGuards(JwtOrApiKeyGuard, RolesGuard)
   @Roles(Role.MERCHANT)
   @Post('/orders/:orderId/cancel')
   @HttpCode(HttpStatus.OK)
   async cancelOrder(
     @Param('merchantId') merchantId: string,
     @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthenticatedUser | null
   ) {
     return this.orderService.cancelOrder(user, merchantId, orderId);
   }

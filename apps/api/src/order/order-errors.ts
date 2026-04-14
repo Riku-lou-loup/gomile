@@ -1,5 +1,3 @@
-import { CANCELLED } from "dns";
-
 export const ORDER_ERRORS  = {
   ORDER_NOT_FOUND : {
     statusCode: 404,
@@ -16,6 +14,10 @@ export const ORDER_ERRORS  = {
   ORDER_ALREADY_CANCELLED : {
     statusCode: 409,
     message: "Commande déjà annulé"
+  },
+  ORDER_ALREADY_TAKEN : {
+    statusCode: 409,
+    message: "Cette commande a deja ete acceptee par un autre livreur"
   }
 } as const;
 

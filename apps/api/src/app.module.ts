@@ -9,6 +9,7 @@ import { DeliveryPricingModule } from './delivery/delivery-pricing.module';
 import { RedisModule } from './redis/redis.module';
 import { StoreModule } from './store/store.module';
 import { OrderModule } from './order/merchants/order-merchants.module'
+import { OrderLivreursModule } from './order/livreurs/order-livreurs.module'
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { OrderModule } from './order/merchants/order-merchants.module'
     DeliveryPricingModule,
     RedisModule,
     StoreModule,
-    OrderModule
+    OrderModule,
+    OrderLivreursModule,
   ],
   controllers: [AppController],
   providers: [AppService],

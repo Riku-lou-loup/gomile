@@ -50,6 +50,10 @@ export const AUTH_ERRORS = {
   API_KEY_EXPIRED: {
     statusCode: 401,
     message: 'Clef API expiree'
+  },
+  DRIVER_NOT_FOUND: {
+    statusCode: 404,
+    message: 'Livreur non trouve',
   }
 } as const;
 
