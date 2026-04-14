@@ -1,5 +1,5 @@
 import { UnauthorizedException, ConflictException, ForbiddenException, GoneException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { Prisma, OrderStatus, Role, HandshakeType } from "@prisma/client";
+import { OrderStatus, Role, HandshakeType } from "@prisma/client";
 import { AuthenticatedUser } from "../../auth/auth.types";
 import { createApiError } from "../../common/api-error";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -10,7 +10,7 @@ import { ORDER_MESSAGE } from "../order-messages";
 
 @Injectable()
 export class OrderLivreursService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
   private async existsDriver(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
       where: { userId: driverId },
@@ -31,19 +31,6 @@ export class OrderLivreursService {
     return order;
   }
 
-  private async verifyOrderOwnership(driverId: string, orderId: string) {
-    const order = await this.prisma.order.findFirst({
-      where: {
-        driverId : driverId,
-        id: orderId
-      }
-    })
-    if (!order) {
-      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
-    }
-    return order;
-  }
-
   async listDriverOrders(
     user: AuthenticatedUser,
     driverId: string,
@@ -54,7 +41,7 @@ export class OrderLivreursService {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
 
-    const where: Prisma.OrderWhereInput = { driverId };
+    const where: any = { driverId };
     switch (filter) {
       case 'active':
         where.status = { in: [OrderStatus.DRIVER_ACCEPTED, OrderStatus.PICKED_UP] };
@@ -116,11 +103,19 @@ export class OrderLivreursService {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     };
     const order = await this.existsOrder(orderId);
-    
-    if (order.status !== OrderStatus.DRIVER_ACCEPTED) {
-      throw new ConflictException(createApiError('ORDER_PICKUP_NO_LONGER_AVAILABLE', ORDER_ERRORS))
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_CANCELLED', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.PICKED_UP) {
+      throw new ConflictException(createApiError('ORDER_PICKUP_NO_LONGER_AVAILABLE', ORDER_ERRORS));
     };
-    
+
+    if (order.status !== OrderStatus.DRIVER_ACCEPTED) {
+      throw new InternalServerErrorException(createApiError('ORDER_BAD_STATUS', ORDER_ERRORS));
+    };
+
     if (order.driverId !== driverId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     };
@@ -153,13 +148,10 @@ export class OrderLivreursService {
       // decrease attemps
       await this.prisma.handshake.update({
         where: {
-          orderId_type :{
-            orderId,
-            type: HandshakeType.A
-          }
+          id: handshake.id
         },
         data: {
-          remainingAttemps: remainingAttemps-1
+          remainingAttemps: remainingAttemps - 1
         }
       });
       throw new UnauthorizedException(createApiError('INCORRECT_HANDSHAKE_CODE', ORDER_ERRORS));
@@ -186,6 +178,84 @@ export class OrderLivreursService {
         status: OrderStatus.PICKED_UP
       }
     });
-    return { orderId: orderId, message: 'Order picked up successfully', pickedUpAt: today};
+    return { orderId: orderId, message: ORDER_MESSAGE.ORDER_PICKED_UP };
+  }
+
+  // deliver order
+  async deliverOrder(user: AuthenticatedUser, driverId: string, orderId: string, deliveryCode: string) {
+    await this.existsDriver(driverId)
+    if (user.id !== driverId) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
+    }
+
+    const order = await this.existsOrder(orderId);
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_CANCELLED', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.DELIVERED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_DELIVERED', ORDER_ERRORS));
+    }
+
+    if (order.status !== OrderStatus.PICKED_UP) {
+      throw new InternalServerErrorException(createApiError('ORDER_BAD_STATUS', ORDER_ERRORS))
+    }
+
+    const handshake = await this.prisma.handshake.findUnique({
+      where: {
+        orderId_type: {
+          orderId,
+          type: HandshakeType.B
+        },
+      },
+    });
+
+    if (!handshake) {
+      throw new InternalServerErrorException(createApiError('HANDSHAKE_NOT_FOUND', ORDER_ERRORS));
+    }
+
+    const remainingAttemps = handshake.remainingAttemps;
+
+    if (handshake.expiresAt.getTime() < Date.now()) {
+      throw new GoneException(createApiError('HANDSHAKE_EXPIRED', ORDER_ERRORS));
+    }
+
+    if (remainingAttemps === 0) {
+      throw new HttpException(createApiError('HANDSHAKE_ATTEMPTS_PASSED', ORDER_ERRORS), 429);
+    }
+
+    if (handshake.code !== deliveryCode) {
+      await this.prisma.handshake.update({
+        where: {
+          id: handshake.id
+        },
+        data: {
+          remainingAttemps: remainingAttemps - 1
+        }
+      });
+      throw new UnauthorizedException(createApiError('INCORRECT_HANDSHAKE_CODE', ORDER_ERRORS))
+    }
+
+    const today = new Date();
+
+    await this.prisma.handshake.update({
+      where: {
+        id: handshake.id
+      },
+      data: {
+        verifiedAt: today
+      }
+    })
+    await this.prisma.order.update({
+      where: {
+        id: orderId
+      },
+      data: {
+        deliveredAt: today,
+        status: OrderStatus.DELIVERED
+      }
+    })
+    return { orderId: orderId, message: ORDER_MESSAGE.ORDER_DELIVERED };
   }
 }
