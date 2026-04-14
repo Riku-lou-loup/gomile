@@ -186,7 +186,7 @@ export class StoreService {
 
   // List stores
   async listStore(user: AuthenticatedUser, merchantId: string, isActive?: boolean) {
-    if (user.id !== merchantId || user.role !== Role.ADMIN) {
+    if (user.id !== merchantId && user.role !== Role.ADMIN) {
       throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS))
     }
     return this.prisma.store.findMany({
