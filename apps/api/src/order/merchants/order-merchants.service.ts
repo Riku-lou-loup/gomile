@@ -12,18 +12,14 @@ import { GetOrderResponseDto } from '../dto/get-order-response.dto'
 import { Merchant, Order, Store } from '@prisma/client'
 import { Role } from '@prisma/client'
 import { ListMerchantOrdersResponseDto } from '../dto/list-merchant-orders-response'
-import { OrderStatus } from '@prisma/client'
-import { create } from 'axios'
+import { HandshakeType, OrderStatus } from '@prisma/client'
 import { CancelOrderResponseDto } from '../dto/cancel-order-response'
+import { randomInt } from 'crypto'
+
 @Injectable()
 export class OrderService  {
   constructor(private prisma: PrismaService) {
   }
-  private cancelStatuses = [
-    OrderStatus.CANCELLED, 
-    OrderStatus.PICKED_UP,
-    OrderStatus.DELIVERED
-  ]
 
   // Verify existant of the merchant
   private async existsMerchant(merchantId: string): Promise<Merchant> {
@@ -96,17 +92,31 @@ export class OrderService  {
     }
     await this.existsStore(storeId);
     await this.verifyStoreOwnership(merchantId, storeId);
-    const response = await this.prisma.order.create({
+    const pickupCode = randomInt(0, 1000000).toString().padStart(6, '0');
+    const deliveryCode = randomInt(0, 1000000).toString().padStart(6, '0');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const order = await this.prisma.order.create({
       data: {
         merchantId,
         storeId,
         customerName: dto.customerName,
         customerPhone: dto.customerPhone,
         dropOffAddress: dto.dropOffAddress,
+        handshakes: {
+          createMany: {
+            data: [
+              { type: HandshakeType.A, code: pickupCode, expiresAt },
+              { type: HandshakeType.B, code: deliveryCode, expiresAt },
+            ],
+          },
+        },
       },
     });
     return {
-      orderId: response.id,
+      orderId: order.id,
+      pickupCode,
+      deliveryCode,
       message: ORDER_MESSAGE.ORDER_CREATED,
     };
   }
@@ -131,9 +141,9 @@ export class OrderService  {
     }) as ListMerchantOrdersResponseDto[]
   }
 
-  async getOrder(user: AuthenticatedUser, merchantId: string, orderId: string): Promise<GetOrderResponseDto> {
+  async getOrder(user: AuthenticatedUser | null, merchantId: string, orderId: string): Promise<GetOrderResponseDto> {
     await this.existsMerchant(merchantId);
-    if (user.id !== merchantId && user.role !== Role.ADMIN) {
+    if (user && user.id !== merchantId && user.role !== Role.ADMIN) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
     const order = await this.verifyOrderOwnership(merchantId, orderId);
@@ -153,10 +163,10 @@ export class OrderService  {
     };
   }
 
-  async cancelOrder(user: AuthenticatedUser, merchantId: string, orderId: string): Promise<CancelOrderResponseDto> {
+  async cancelOrder(user: AuthenticatedUser | null, merchantId: string, orderId: string): Promise<CancelOrderResponseDto> {
     await this.existsMerchant(merchantId);
 
-    if (user.id !== merchantId) {
+    if (user && user.id !== merchantId && user.role !== Role.ADMIN) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
 
@@ -164,7 +174,7 @@ export class OrderService  {
     if (order.status === OrderStatus.CANCELLED) {
       throw new ConflictException(createApiError('ORDER_ALREADY_CANCELLED', ORDER_ERRORS));
     }
-    if (this.cancelStatuses) {
+    if (order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.DELIVERED) {
       throw new ConflictException(createApiError('ORDER_ALREADY_PICKED_UP', ORDER_ERRORS));
     }
 
@@ -172,6 +182,7 @@ export class OrderService  {
       where: { id: orderId },
       data: {
         status: OrderStatus.CANCELLED,
+        cancelledAt: new Date(),
       },
     });
     return {message: ORDER_MESSAGE.ORDER_CANCELLED}
