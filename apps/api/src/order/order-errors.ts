@@ -23,9 +23,17 @@ export const ORDER_ERRORS  = {
     statusCode: 409,
     message: "Cette commande a deja collectee"
   },
+  ORDER_ALREADY_DELIVERED :  {
+    statusCode: 409,
+    message: "Cette commande a deja livree"
+  },
+  ORDER_BAD_STATUS: {
+    statusCode: 500, // This should not happen, if it does, Samir will buy me a tacos
+    message: "Etat de commande illegal"
+  },
   HANDSHAKE_NOT_FOUND : {
     statusCode: 500,
-    message: "Handshake not found for this order ?!"
+    message: "Handshake non trouvable ?!"
   },
   HANDSHAKE_ATTEMPTS_PASSED: {
     statusCode: 429,
