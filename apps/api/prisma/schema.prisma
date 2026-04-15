@@ -81,12 +81,12 @@ enum DriverStatus {
 }
 
 enum DocumentType {
-  PERMIS
-  CARTE_GRISE
+  DRIVING_LICENSE
+  REGISTRATION_CARD
   RIB
   CNI
   PASSPORT
-  JUSTIFICATIF // undefined type for any other document
+  OTHER
 }
 
 model User {
@@ -142,6 +142,7 @@ model Store {
   address    String
   latitude   Float    @db.DoublePrecision
   longitude  Float    @db.DoublePrecision
+  location   Unsupported("geometry(Point, 4326)")?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -194,6 +195,10 @@ model Driver {
   gender      Gender
   dateOfBirth DateTime
   address     String
+  city        String?
+  zipCode     String?
+  street      String?
+  equipments  String[]
   deliveryCity    String
   deliveryRadius  Int
   transportType   VehicleType
@@ -201,6 +206,7 @@ model Driver {
   status          DriverStatus @default(OFFLINE)
   lastKnownLatitude  Float?   @db.DoublePrecision
   lastKnownLongitude Float?   @db.DoublePrecision
+  lastKnownLocation  Unsupported("geometry(Point, 4326)")?
   rating     Float?
   totalTrips Int     @default(0)
   gomileCode String  @unique
