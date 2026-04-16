@@ -72,12 +72,16 @@ Services attendus :
 
 Il faut créer vos propre fichiers d'environnement `apps/api/.env` à partir de `apps/api/.env.example` avec au minimum :
 
+Màj (backend) 25 Mars : Utilisation de l'API OpenRouteService pour calculer la distance entre deux destination. Vous devez créer un compte gratuit pour récupérer les clés API pour continuer. Vous aurez normalement 1000 api calls par jour (c'est pas illimité !)
 ```env
 DATABASE_URL="postgresql://gomile:gomile@localhost:5432/gomile?schema=public"
 REDIS_URL="redis://localhost:6379"
 PORT=3000
 JWT_ACCESS_SECRET="change-me-access-secret"
 JWT_REFRESH_SECRET="change-me-refresh-secret"
+ORS_API_KEY="ici faut utiliser vos clés api de OpenRouteService"
+ORS_BASE_URL="https://api.openrouteservice.org"
+
 ```
 
 Pour le proxy BFF web, créer `apps/web/.env.local` :
@@ -92,8 +96,11 @@ API_BASE_URL=http://localhost:3000
 # Génère le client Prisma
 pnpm --filter api exec prisma generate
 
-# Crée/applique une migration locale
+# Crée/applique une migration locale, à faire à chaque fois le schéma DB change
 pnpm --filter api exec prisma migrate dev --name <nom_migration>
+
+# Ou simplement
+pnpm --filter api exec prisma migrate dev
 ```
 
 Fichiers concernés :
@@ -109,7 +116,7 @@ Depuis la racine du dépôt :
 # API NestJS (dev)
 pnpm --filter api start:dev
 
-# Web Next.js (dev) sur 3001 pour éviter le conflit avec l'API
+# Web Next.js (dev) sur 3001 pour éviter le conflit avec l'API (mais à configurer dans env)
 pnpm --filter web dev -- --port 3001
 
 # Mobile Expo

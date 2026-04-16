@@ -6,6 +6,7 @@ type ButtonVariant = 'filled' | 'outline' | 'ghost'
 type ButtonSize = 'sm' | 'md' | 'lg'
 type ButtonTheme = 'green' | 'blue'
 type ButtonShade = 'normal' | 'light'
+type IconPosition = 'left' | 'right'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -13,6 +14,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   shade?: ButtonShade
   size?: ButtonSize
   fullWidth?: boolean
+  href?: string
+  /** Icône affichée dans le bouton */
+  icon?: React.ReactNode
+  /** Position de l'icône : 'left' (défaut) ou 'right' */
+  iconPosition?: IconPosition
+  /** Si true, affiche uniquement l'icône dans un bouton carré */
   iconOnly?: boolean
   disabled?: boolean
   children?: React.ReactNode
@@ -113,6 +120,9 @@ export default function Button({
   shade = 'normal',
   size = 'md',
   fullWidth = false,
+  href,
+  icon,
+  iconPosition = 'left',
   iconOnly = false,
   disabled = false,
   children,
@@ -120,26 +130,71 @@ export default function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
-      disabled={disabled}
-      className={clsx(
-        'inline-flex items-center justify-center gap-2',
-        'font-display font-bold uppercase tracking-wider',
-        'rounded-btn',
-        'transition-all duration-200 ease-in-out',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        disabled
-          ? 'pointer-events-none cursor-not-allowed opacity-40 saturate-0'
-          : 'cursor-pointer active:scale-95',
-        iconOnly ? iconOnlySizeClasses[size] : sizeClasses[size],
-        variantClasses[theme][shade][variant],
-        fullWidth && !iconOnly && 'w-full',
-        className,
-      )}
-      aria-disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
+    href ? (
+      <Link
+        href={href}
+        className={clsx(
+          'flex items-center justify-center gap-2',
+          'font-display font-bold uppercase tracking-wider',
+          'rounded-btn cursor-pointer',
+          'transition-all duration-200 ease-in-out',
+          'focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2',
+          disabled
+            ? 'opacity-40 cursor-not-allowed pointer-events-none saturate-0'
+            : 'active:scale-95',
+          sizeClasses[size],
+          variantClasses[theme][shade][variant],
+          fullWidth && !iconOnly ? 'w-full' : '',
+          iconPosition === 'right' ? 'flex-row-reverse' : 'flex-row',
+          className,
+        )}
+        aria-label={iconOnly && typeof children === 'string' ? children : undefined}
+        aria-disabled={disabled}
+      >
+        {iconOnly && icon}
+
+        {!iconOnly && (
+          <>
+            {icon}
+            {children && <span>{children}</span>}
+          </>
+        )}
+      </Link>
+    ) : (
+      <button
+        disabled={disabled}
+        className={clsx(
+          'flex items-center justify-center gap-2',
+          'font-display font-bold uppercase tracking-wider',
+          'rounded-btn cursor-pointer',
+          'transition-all duration-200 ease-in-out',
+          'focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2',
+          /* Désactivé */
+          disabled
+            ? 'opacity-40 cursor-not-allowed pointer-events-none saturate-0'
+            : 'active:scale-95',
+          sizeClasses[size],
+          variantClasses[theme][shade][variant],
+          fullWidth && !iconOnly ? 'w-full' : '',
+          /* Inverser l'ordre si icône à droite */
+          iconPosition === 'right' ? 'flex-row-reverse' : 'flex-row',
+          className,
+        )}
+        aria-label={iconOnly && typeof children === 'string' ? children : undefined}
+        aria-disabled={disabled}
+        {...props}
+      >
+        {/* Icône seule */}
+        {iconOnly && icon}
+
+        {/* Icône + texte */}
+        {!iconOnly && (
+          <>
+            {icon}
+            {children && <span>{children}</span>}
+          </>
+        )}
+      </button>
+    )
   )
 }
