@@ -35,6 +35,22 @@
   --color-border:         #C8DEC8;   /* Vert clair  — bordures, séparateurs   */
   --color-footer-bg:      #3B82F6;   /* Bleu clair — fond footer         */
   --color-footer-text:    #ffffff;   /* Vert pâle   — texte footer            */
+  --color-heading:        #020617;   /* Titres forts, remplace slate-950*/
+  --color-body:           #475569;   /* Texte descriptif, remplace slate-600 */
+  --color-body-strong:    #334155;   /* Texte courant plus soutenu, remplace slate-700 */
+  --color-link:           #075985;   /* Lien principal, remplace sky-800 */
+
+  --color-danger:         #b91c1c;   /* Texte d’erreur */
+  --color-danger-soft:    #fef2f2;   /* Fond message erreur */
+  --color-danger-border:  #fecaca;   /* Bordure message erreur */
+
+  --color-success:        #047857;   /* Texte de succès */
+  --color-success-soft:   #ecfdf5;   /* Fond message succès */
+  --color-success-border: #a7f3d0;   /* Bordure message succès */
+
+  --color-warning:        #f59e0b;   /* Texte d’avertissement */
+  --color-warning-soft:   #fff1cf;   /* Fond message avertissement */
+  --color-warning-text:   #9a5b00;   /* Bordure message avertissement */
 
   /* Typographie */
   --font-display: 'Roboto', sans-serif;   /* Titres uppercase bold  */
@@ -129,6 +145,8 @@ body {
 .link {
   @apply transition-colors duration-150 hover:text-primary-green underline underline-offset-2;
 }
+/* ─── Images - Map ───────────────────────── */
+
 .gomile-leaflet-map {
   height: 100%;
   width: 100%;
@@ -136,30 +154,34 @@ body {
 
 .gomile-leaflet-map.leaflet-container {
   background: #dfe7d8;
+  background: var(--color-bg);
   font: inherit;
 }
 
 .gomile-leaflet-map .leaflet-control-zoom {
   border: none;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow-card);
 }
 
 .gomile-leaflet-map .leaflet-control-zoom a {
   width: 2.35rem;
   height: 2.35rem;
   line-height: 2.2rem;
-  color: #16321a;
+  color: var(--color-text);
+  background: var(--color-bg-card);
 }
 
 .gomile-leaflet-map .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
   font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .gomile-leaflet-map .leaflet-popup-content-wrapper {
   border-radius: 1.15rem;
   padding: 0;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-card);
 }
 
 .gomile-leaflet-map .leaflet-popup-content {
@@ -167,19 +189,19 @@ body {
 }
 
 .gomile-leaflet-map .leaflet-popup-tip {
-  background: #ffffff;
+  background: var(--color-bg-card);
 }
 
 .gomile-leaflet-popup .leaflet-popup-close-button {
   right: 10px;
   top: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .gomile-map-popup {
   min-width: 14rem;
   padding: 1rem 1rem 0.95rem;
-  background: #ffffff;
+  background: var(--color-bg-card);
 }
 
 .gomile-map-popup__top {
@@ -193,7 +215,7 @@ body {
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-heading);
 }
 
 .gomile-map-popup__pill {
@@ -208,11 +230,26 @@ body {
   letter-spacing: 0.04em;
 }
 
+.gomile-map-popup__pill--green {
+  background: var(--color-bg);
+  color: var(--color-primary-hover);
+}
+
+.gomile-map-popup__pill--amber {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.gomile-map-popup__pill--red {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
 .gomile-map-popup__destination {
   margin-top: 0.8rem;
   font-size: 0.98rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-body-strong);
 }
 
 .gomile-map-popup__caption {
@@ -221,12 +258,12 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: var(--color-body);
 }
 
 .gomile-map-popup__eta {
   margin-top: 0.28rem;
   font-size: 0.96rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-heading);
 }
