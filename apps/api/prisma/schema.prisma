@@ -35,6 +35,18 @@ enum WalletEntryType {
   DEBIT
 }
 
+enum WalletEntryStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum StoreProvider {
+  WOOCOMMERCE
+  SHOPIFY
+  OTHER
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -55,9 +67,32 @@ enum HandshakeType {
   B
 }
 
+enum VehicleType {
+  CAR
+  BIKE
+  SCOOTER
+  TRUCK
+}
+
+enum DriverStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum DocumentType {
+  PERMIS
+  CARTE_GRISE
+  RIB
+  CNI
+  PASSPORT
+  JUSTIFICATIF // undefined type for any other document
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
+  phone        String?  @unique
   password     String
   role         Role
   refreshToken String?
@@ -69,29 +104,54 @@ model User {
 }
 
 model Merchant {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @unique @db.Uuid
+  userId    String   @id @db.Uuid
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  store  Store[]
-  orders Order[]
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store   Store[]
+  orders  Order[]
+  apiKeys MerchantApiKey[]
+}
+
+model MerchantApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  merchantId  String    @db.Uuid
+  storeId     String    @db.Uuid
+  name        String
+  keyHash     String    @unique
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  expiresAt   DateTime?
+
+  merchant Merchant @relation(fields: [merchantId], references: [userId], onDelete: Cascade)
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([storeId])
+  @@index([revokedAt])
 }
 
 model Store {
   id         String   @id @default(uuid()) @db.Uuid
   merchantId String   @db.Uuid
   name       String
+  description String?
+  isActive   Boolean  @default(true)
   address    String
   latitude   Float    @db.DoublePrecision
   longitude  Float    @db.DoublePrecision
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  merchant Merchant @relation(fields: [merchantId], references: [id])
+  domain     String?
+  provider   StoreProvider?
+  webhookUrl String?
+
+  merchant Merchant         @relation(fields: [merchantId], references: [userId])
   orders   Order[]
+  apiKeys  MerchantApiKey[]
 
   @@index([merchantId])
 }
@@ -114,9 +174,9 @@ model Order {
   deliveredAt    DateTime?
   cancelledAt    DateTime?
 
-  merchant   Merchant    @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  merchant   Merchant    @relation(fields: [merchantId], references: [userId], onDelete: Restrict)
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  driver     Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  driver     Driver?     @relation(fields: [driverId], references: [userId], onDelete: SetNull)
   handshakes Handshake[]
 
   @@index([merchantId])
@@ -127,15 +187,25 @@ model Order {
 
 // A driver can have many orders, KYC submissions and a wallet
 model Driver {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @unique @db.Uuid
+  userId      String   @id @db.Uuid
   firstName   String
   lastName    String
-  avatarUrl   String
-  phone       String
+  avatarUrl   String?
   gender      Gender
   dateOfBirth DateTime
   address     String
+  deliveryCity    String
+  deliveryRadius  Int
+  transportType   VehicleType
+  activeVehicle   VehicleType?
+  status          DriverStatus @default(OFFLINE)
+  lastKnownLatitude  Float?   @db.DoublePrecision
+  lastKnownLongitude Float?   @db.DoublePrecision
+  rating     Float?
+  totalTrips Int     @default(0)
+  gomileCode String  @unique
+  siret      String?
+
 
   kycStatus KycStatus @default(NOT_SUBMITTED)
   createdAt DateTime  @default(now())
@@ -145,18 +215,22 @@ model Driver {
   orders         Order[]
   kycSubmissions KycSubmission[]
   wallet         Wallet?
+
+  driverDocuments DriverDocument[]
 }
+
 
 model Handshake {
   id      String @id @default(uuid()) @db.Uuid
   orderId String @db.Uuid
 
   type     HandshakeType
-  codeHash String
+  code String
 
   createdAt  DateTime  @default(now())
   verifiedAt DateTime?
   expiresAt  DateTime
+  remainingAttemps    Int @default(3)
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -175,9 +249,24 @@ model KycSubmission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver Driver @relation(fields: [driverId], references: [userId], onDelete: Cascade)
 
   @@index([driverId])
+}
+
+model DriverDocument {
+  id         String       @id @default(uuid()) @db.Uuid
+  driverId   String       @db.Uuid
+  type       DocumentType
+  verified   Boolean      @default(false)
+  rejectionReason String?
+  url        String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  driver Driver @relation(fields: [driverId], references: [userId], onDelete: Cascade)
+
+  @@index([driverId]) 
 }
 
 model Wallet {
@@ -187,7 +276,7 @@ model Wallet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  driver  Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver  Driver        @relation(fields: [driverId], references: [userId], onDelete: Cascade)
   entries WalletEntry[]
 
   @@index([driverId])
@@ -198,8 +287,9 @@ model WalletEntry {
   walletId  String          @db.Uuid
   amount    Int
   type      WalletEntryType
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  status    WalletEntryStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
