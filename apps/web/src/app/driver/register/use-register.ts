@@ -5,8 +5,10 @@ import { useState, useTransition, type FormEvent } from "react";
 
 import { logout, registerDriver } from "@/lib/auth-client";
 import {
+  buildRegisterDriverInput,
   driverRegisterSteps,
   initialDriverRegisterFormData,
+  normalizeDriverRegisterFormData,
   type DriverRegisterErrors,
   type DriverRegisterField,
   type DriverRegisterFormData,
@@ -20,36 +22,37 @@ function buildStepErrors(
   stepId: number,
   formData: DriverRegisterFormData,
 ): DriverRegisterErrors {
+  const normalizedFormData = normalizeDriverRegisterFormData(formData);
   const errors: DriverRegisterErrors = {};
 
   if (stepId === 1) {
-    if (!formData.firstName.trim()) {
+    if (!normalizedFormData.firstName) {
       errors.firstName = "Renseignez votre prenom.";
     }
-    if (!formData.lastName.trim()) {
+    if (!normalizedFormData.lastName) {
       errors.lastName = "Renseignez votre nom.";
     }
-    if (!formData.email.trim()) {
+    if (!normalizedFormData.email) {
       errors.email = "Renseignez votre adresse e-mail.";
-    } else if (!isEmailValid(formData.email.trim())) {
+    } else if (!isEmailValid(normalizedFormData.email)) {
       errors.email = "Renseignez une adresse e-mail valide.";
     }
-    if (!formData.phone.trim()) {
+    if (!normalizedFormData.phone) {
       errors.phone = "Renseignez votre numero de telephone.";
     }
   }
 
   if (stepId === 2) {
-    if (!formData.dateOfBirth.trim()) {
+    if (!normalizedFormData.dateOfBirth) {
       errors.dateOfBirth = "Renseignez votre date de naissance.";
     }
-    if (formData.gender === "UNDEFINED") {
+    if (normalizedFormData.gender === "UNDEFINED") {
       errors.gender = "Selectionnez votre genre.";
     }
-    if (!formData.address.trim()) {
+    if (!normalizedFormData.address) {
       errors.address = "Renseignez votre adresse.";
     }
-    if (!formData.avatarUrl.trim()) {
+    if (!normalizedFormData.avatarUrl) {
       errors.avatarUrl = "Ajoutez l'URL de votre avatar.";
     }
   }
@@ -133,12 +136,7 @@ export function useRegister() {
     }
 
     try {
-      console.log(formData);
-      
-      const session = await registerDriver({
-        ...formData,
-        documentUrl: formData.documentUrl.trim() || undefined,
-      });
+      const session = await registerDriver(buildRegisterDriverInput(formData));
 
       if (session.user.role !== "DRIVER") {
         setFormError("Le compte cree n'est pas un compte livreur.");

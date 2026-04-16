@@ -1,6 +1,9 @@
-import type { RegisterDriverInput } from "@/lib/auth-client";
+import { type RegisterDriverInput } from "@/lib/auth-client";
 
-export type DriverRegisterFormData = RegisterDriverInput & {
+export type DriverRegisterFormData = Omit<
+  RegisterDriverInput,
+  "documentUrl"
+> & {
   documentUrl: string;
 };
 
@@ -46,3 +49,30 @@ export const initialDriverRegisterFormData: DriverRegisterFormData = {
   password: "",
   phone: "",
 };
+
+export function normalizeDriverRegisterFormData(
+  formData: DriverRegisterFormData,
+): DriverRegisterFormData {
+  return {
+    ...formData,
+    address: formData.address.trim(),
+    avatarUrl: formData.avatarUrl.trim(),
+    dateOfBirth: formData.dateOfBirth.trim(),
+    documentUrl: formData.documentUrl.trim(),
+    email: formData.email.trim(),
+    firstName: formData.firstName.trim(),
+    lastName: formData.lastName.trim(),
+    phone: formData.phone.trim(),
+  };
+}
+
+export function buildRegisterDriverInput(
+  formData: DriverRegisterFormData,
+): RegisterDriverInput {
+  const normalizedFormData = normalizeDriverRegisterFormData(formData);
+
+  return {
+    ...normalizedFormData,
+    documentUrl: normalizedFormData.documentUrl || undefined,
+  };
+}

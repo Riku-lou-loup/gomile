@@ -1,4 +1,5 @@
 import type {
+  Gender,
   AuthSession,
   AuthUser,
   LoginInput,
@@ -7,18 +8,21 @@ import type {
   RegisterMerchantInput,
   Role,
 } from "../../../../shared/auth-contracts";
+import { APP_GENDERS } from "../../../../shared/auth-contracts";
 import type { ApiErrorPayload } from "../../../../shared/api-errors";
 import { createApiError } from "../../../../shared/api-errors";
 
 export type {
   AuthSession,
   AuthUser,
+  Gender,
   LoginInput,
   LogoutResponse,
   RegisterDriverInput,
   RegisterMerchantInput,
   Role,
 };
+export { APP_GENDERS };
 
 async function parseError(response: Response) {
   const fallbackError = createApiError("REQUEST_FAILED");

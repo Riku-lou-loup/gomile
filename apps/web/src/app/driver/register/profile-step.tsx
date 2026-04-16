@@ -1,3 +1,4 @@
+import { APP_GENDERS, type Gender } from "@/lib/auth-client";
 import Input from "@/components/ui/design-system/input/input";
 import Typography from "@/components/ui/design-system/typography";
 import AddressIcon from "@/components/ui/icons/AddressIcon";
@@ -9,6 +10,12 @@ import type {
   DriverRegisterField,
   DriverRegisterFormData,
 } from "./steps";
+
+const genderLabels: Record<Gender, string> = {
+  FEMALE: "Femme",
+  MALE: "Homme",
+  UNDEFINED: "Genre",
+};
 
 type ProfileStepProps = {
   errors: DriverRegisterErrors;
@@ -58,9 +65,14 @@ export default function ProfileStep({
               onChange={(event) => onFieldChange("gender", event.target.value)}
               className={styles.selectField}
             >
-              <option value="UNDEFINED">Genre</option>
-              <option value="MALE">Homme</option>
-              <option value="FEMALE">Femme</option>
+              <option value="UNDEFINED">{genderLabels.UNDEFINED}</option>
+              {APP_GENDERS.filter((gender) => gender !== "UNDEFINED").map(
+                (gender) => (
+                  <option key={gender} value={gender}>
+                    {genderLabels[gender]}
+                  </option>
+                ),
+              )}
             </select>
           </div>
           {errors.gender ? (
