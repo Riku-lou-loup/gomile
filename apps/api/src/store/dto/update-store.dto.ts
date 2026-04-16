@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
+import { IsEnum, ValidateIf, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
 import { StoreProvider } from "@prisma/client";
 
 export class UpdateStoreDto {
@@ -21,16 +21,19 @@ export class UpdateStoreDto {
     @ApiProperty({ description: "The latitude of the store's location", example: 45.188529, type: 'number', required: false })
     @IsNumber()
     @IsOptional()
+    @ValidateIf(o => o.longitude !== undefined)
     latitude?: number;
 
     @ApiProperty({ description: "The longitude of the store's location", example: 5.724524, type: 'number', required: false })
     @IsNumber()
     @IsOptional()
+    @ValidateIf(o => o.latitude !== undefined)
     longitude?: number;
 
     @ApiProperty({ description: "Domain of the store (for plugin validation)", example: "mylittleshop.com", required: false, type: 'string' })
     @IsString()
     @IsOptional()
+    @ValidateIf(o => o.provider !== undefined)
     domain?: string;
 
     @ApiProperty({ description: "E-commerce provider", enum: StoreProvider, required: false })
