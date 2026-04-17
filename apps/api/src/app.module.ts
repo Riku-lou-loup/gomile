@@ -8,8 +8,10 @@ import { KycModule } from './kyc/kyc.module';
 import { DeliveryPricingModule } from './delivery/delivery-pricing.module';
 import { RedisModule } from './redis/redis.module';
 import { StoreModule } from './store/store.module';
-import { OrderModule } from './order/merchants/order-merchants.module'
+import { OrderMerchantsModule } from './order/merchants/order-merchants.module'
 import { OrderLivreursModule } from './order/livreurs/order-livreurs.module'
+import { DriverMeModule } from './driver/driver-me.module'
+import { UploadModule } from './upload/upload.module'
 
 @Module({
   imports: [
@@ -20,8 +22,10 @@ import { OrderLivreursModule } from './order/livreurs/order-livreurs.module'
     DeliveryPricingModule,
     RedisModule,
     StoreModule,
-    OrderModule,
     OrderLivreursModule,
+    OrderMerchantsModule,
+    DriverMeModule,
+    UploadModule
   ],
   controllers: [AppController],
   providers: [AppService],

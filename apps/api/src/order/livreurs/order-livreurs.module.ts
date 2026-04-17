@@ -7,5 +7,6 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @Module({
   controllers: [OrderLivreursController],
   providers: [OrderLivreursService, RolesGuard, JwtAuthGuard],
+  exports: [OrderLivreursService],
 })
 export class OrderLivreursModule {}
