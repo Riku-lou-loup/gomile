@@ -10,4 +10,4 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
   controllers: [OrderMerchantsController],
   providers: [OrderService, RolesGuard, ApiKeyService, JwtOrApiKeyGuard, ApiKeyGuard,  JwtAuthGuard],
 })
-export class OrderModule {}
+export class OrderMerchantsModule {}
