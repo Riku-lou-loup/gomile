@@ -36,7 +36,7 @@ export class UploadService {
       ContentType: contentType,
     });
     const uploadUrl = await getSignedUrl(this.s3, command, {expiresIn: 300}); // 5 minutes expiration
-    const fileUrl = `https://${this.bucket}.s3.${process.env.AWS_REGIONS}.amazonaws.com/${key}`;
+    const fileUrl = `https://${this.bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
     return { uploadUrl, fileUrl };
   }
 
