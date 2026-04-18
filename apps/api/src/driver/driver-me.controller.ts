@@ -31,6 +31,8 @@ import type { AuthenticatedUser } from "../auth/auth.types";
 import { HandshakeDto } from "../order/dto/handshake.dto";
 import { DriverMeService } from "./driver-me.service";
 import { DriverPositionDto } from "./dto/driver-position.dto";
+import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
+import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 
 @ApiTags('[Mobile] Driver')
 @ApiBearerAuth('access-token')
@@ -112,5 +114,60 @@ export class DriverMeController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.driverMeService.updateDriverPosition(user, dto.latitude, dto.longitude);
+  }
+
+  @ApiOperation({ summary: "Update driver status", description: "If the driver was available, update the driver status to offline and vice versa. A driver with an ongoing order (busy) cannot change its status." })
+  @ApiOkResponse({ description: 'Current status of the driver after the toggle', schema: { properties: { message : { type: 'string' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT'})
+  @ApiConflictResponse({ description: 'Driver with ongoing orders cannot change its status'})
+  @Patch('availability')
+  @HttpCode(HttpStatus.OK)
+  async toggleDriverStatus(
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.driverMeService.toggleDriverAvailability(user)
+  }
+
+  @ApiOperation({ summary: "Get active missions", description: "Returns missions currently in DRIVER_ACCEPTED or PICKED_UP status." })
+  @ApiOkResponse({ description: 'List of active missions' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('missions/active')
+  @HttpCode(HttpStatus.OK)
+  async getActiveMissions(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getActiveOrders(user);
+  }
+
+  @ApiOperation({ summary: "Get missions history", description: "Returns missions in DELIVERED or CANCELLED status." })
+  @ApiOkResponse({ description: 'List of past missions' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('missions/history')
+  @HttpCode(HttpStatus.OK)
+  async getMissionsHistory(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getPastOrders(user);
+  }
+
+  @ApiOperation({ summary: "Get driver profile" })
+  @ApiOkResponse({ type: DriverProfileResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  async getProfile(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getDriverProfile(user);
+  }
+
+  @ApiOperation({ summary: "Update driver profile", description: "Changing address fields will reset KYC status to NOT_SUBMITTED." })
+  @ApiOkResponse({ schema: { properties: { message: { type: 'string' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Patch('profile')
+  @HttpCode(HttpStatus.OK)
+  async updateProfile(
+    @Body() dto: UpdateDriverProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.driverMeService.updateDriverProfile(user, dto);
   }
 }
