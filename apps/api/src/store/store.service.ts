@@ -96,6 +96,14 @@ export class StoreService {
       },
     });
 
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      await this.prisma.$executeRaw 
+      `
+      UPDATE "Store"
+      SET location = ST_SetSRID(ST_MakePoint(${dto.longitude}, ${dto.latitude}), 4326)
+      WHERE id = ${store.id}
+      `
+    }
     return {name: dto.name, id: store.id};
   }
 
@@ -125,6 +133,14 @@ export class StoreService {
         webhookUrl: dto.webhookUrl,
       },
     });
+    // Update PostGis location only if coordinates were provided
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      await this.prisma.$executeRaw`
+      UPDATE "Store"
+      SET location = ST_SetSRID(ST_MakePoint(${dto.longitude}, ${dto.latitude}), 4326)
+      WHERE id = ${storeId}
+      `
+    }
     return {name: response.name, id: response.id, message: STORE_MESSAGES.STORE_UPDATED}
   }
 
