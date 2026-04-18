@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateApiKeyDto {
@@ -7,8 +7,9 @@ export class UpdateApiKeyDto {
     @IsOptional()
     name?: string;
 
-    @ApiProperty({ description: 'New expiration date (ISO 8601)', example: '2028-01-01T00:00:00.000Z', type: 'string', required: false })
+    @ApiProperty({ description: 'New expiration date (ISO 8601). Send null to remove expiry.', example: '2028-01-01T00:00:00.000Z', nullable: true, required: false })
+    @ValidateIf(o => o.expiresAt !== null)
     @IsDateString()
     @IsOptional()
-    expiresAt?: string;
+    expiresAt?: string | null;
 }
