@@ -5,7 +5,7 @@ import { AUTH_ERRORS } from "../auth/auth-errors";
 import { createApiError } from "../common/api-error";
 import { DRIVER_MESSAGES } from "./driver-me.message";
 import { DriverPositionDto } from "./dto/driver-position.dto";
-import { DriverStatus } from "@prisma/client";
+import { DriverStatus, WalletEntryStatus, WalletEntryType } from "@prisma/client";
 import { DRIVER_ERROR } from "./driver-me.error";
 import { OrderStatus } from "@prisma/client";
 import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
@@ -13,6 +13,7 @@ import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 import { KycStatus } from "@prisma/client";
 import { UploadService } from "../upload/upload.service";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
+import { DashboardResponseDto } from "./dto/dashboard-response.dto";
 
 @Injectable()
 export class DriverMeService {
@@ -231,6 +232,46 @@ export class DriverMeService {
       }
     })
     return { activeVehicle: dto.vehicleType}
+  }
+
+  // gett dashboard
+  async getDashboard(user: AuthenticatedUser): Promise<DashboardResponseDto> {
+    const driver = await this.existsDriver(user);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const todayTrips = await this.prisma.order.count ({
+      where: {
+        driverId: user.id,
+        status: OrderStatus.DELIVERED,
+        updatedAt: {gte: today}
+      },
+    });
+
+    const totalIncome = await this.prisma.walletEntry.aggregate({
+      where: {
+        wallet: {
+          driverId: user.id
+        },
+        type: WalletEntryType.CREDIT,
+        status: WalletEntryStatus.COMPLETED,
+        createdAt: {
+          gte: today
+        },
+      },
+      _sum: {amount: true}
+    });
+
+    return {
+      isOnline: driver.status === DriverStatus.AVAILABLE,
+      todayEarnings: totalIncome._sum.amount ?? 0,
+      todayTrips: todayTrips,
+      currentLocation: {
+        latitude: driver.lastKnownLatitude,
+        longitude: driver.lastKnownLongitude,
+      },
+      coverageRadiusMeters: driver.deliveryRadius * 1000
+    }
   }
 
 }

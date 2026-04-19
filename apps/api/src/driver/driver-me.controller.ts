@@ -36,6 +36,7 @@ import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 import { KycService } from "../kyc/kyc.service";
 import { SubmitKycDto } from "../kyc/dto/submit-kyc.dto";
+import { DashboardResponseDto } from "./dto/dashboard-response.dto";
 
 @ApiTags('[Mobile] Driver')
 @ApiBearerAuth('access-token')
@@ -200,5 +201,17 @@ export class DriverMeController {
     @Body() dto: SubmitKycDto,
   ) {
     return this.kycService.submitKyc(user.id, dto.documentUrl);
+  }
+
+  @ApiOperation({ summary: "Retrieve driver dashboard", description: "Driver dashboard contains the primary informations of a driver of the day, including its current status, total earnings, last known location as well as its coverage radius"})
+  @ApiOkResponse({type: DashboardResponseDto})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('dashboard')
+  @HttpCode(HttpStatus.OK)
+  async getDriverDashboard(
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.driverMeService.getDashboard(user);
   }
 }
