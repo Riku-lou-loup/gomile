@@ -1,4 +1,4 @@
-import { 
+import {
   Controller,
   Get,
   HttpCode,
@@ -7,9 +7,8 @@ import {
   UseGuards,
   Param,
   Body,
-
- } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiOkResponse, ApiHeader, ApiNotFoundResponse, ApiForbiddenResponse, ApiUnauthorizedResponse, ApiConflictResponse } from "@nestjs/swagger";
+} from "@nestjs/common";
+import { ApiBody, ApiOperation, ApiOkResponse, ApiHeader, ApiNotFoundResponse, ApiForbiddenResponse, ApiUnauthorizedResponse, ApiConflictResponse, ApiInternalServerErrorResponse } from "@nestjs/swagger";
 import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from "@nestjs/swagger";
 import { RolesGuard } from "../../auth/guards/roles.guard";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
@@ -24,6 +23,7 @@ import { OrderService } from "./order-merchants.service";
 import { JwtOrApiKeyGuard } from "../../auth/guards/jwt-or-api-key.guard";
 import { GetOrderResponseDto } from "../dto/get-order-response.dto";
 import { ListMerchantOrdersResponseDto } from "../dto/list-merchant-orders-response";
+import { HandshakeDto } from "../dto/handshake.dto";
 
 @ApiTags('Order/Merchant')
 @Controller('/merchants/:merchantId')
@@ -86,6 +86,23 @@ export class OrderMerchantsController {
     @CurrentUser() user: AuthenticatedUser | null
   ) {
     return this.orderService.getOrder(user, merchantId, orderId);
+  }
+
+  @ApiOperation({ summary: 'Verify driver pickup handshake', description: 'Merchant enters the code shown by the driver' })
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ schema: { properties: { orderId: { type: 'string' }, message: { type: 'string' } } } })
+  @ApiNotFoundResponse({ description: 'Code not found or expired, store not exists' })
+  @ApiConflictResponse({ description: 'Order not in correct state' })
+  @ApiInternalServerErrorResponse({ description : 'Handshake not found, suggesting a deeper backend issue'})
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MERCHANT)
+  @Post('/stores/:storeId/orders/handshake/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyPickup(
+    @Param('storeId') storeId: string,
+    @Body() dto: HandshakeDto,
+  ) {
+    return this.orderService.verifyPickup(storeId, dto.code);
   }
 
   @ApiOperation({ summary: 'Cancel an order', description: 'Accepts JWT bearer token or x-api-key header. Cannot cancel an order that is already picked up, delivered, or cancelled.' })

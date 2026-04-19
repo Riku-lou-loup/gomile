@@ -94,7 +94,19 @@ export class OrderLivreursService {
       throw new ConflictException(createApiError('ORDER_ALREADY_TAKEN', ORDER_ERRORS));
     };
 
-    return { message: "Commande acceptee avec succes" };
+    const handshake = await this.prisma.handshake.findUnique({
+      where: { orderId_type: { orderId, type: HandshakeType.A } },
+    });
+
+    if (!handshake) {
+      throw new InternalServerErrorException(createApiError('HANDSHAKE_NOT_FOUND', ORDER_ERRORS))
+    }
+    
+    // Driver should present to the merchant presenting the pickup code
+    return {
+      pickupCode: handshake?.code,
+      message: ORDER_MESSAGE.ORDER_ACCEPTED,
+    };
   }
 
   async pickupOrder(user: AuthenticatedUser, driverId: string, orderId: string, pickupCode: string) {
