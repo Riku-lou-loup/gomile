@@ -10,13 +10,13 @@ import Navigation from "@/components/ui/header/navigation";
 import GrenobleDeliveryMap from "@/components/dashboard/grenoble-delivery-map";
 import IncidentsAlerts from "@/components/dashboard/incidents-alerts";
 import { Logo } from "@/components/Logo/Logo";
-import { activeDeliveries } from "@/dummiesData/activeDeliveries";
 import { incidents } from "@/dummiesData/incidentAlert";
-import { mapMarkers } from "@/dummiesData/mapMarkers";
-import { dashboardMenuItems } from "./dashboard-menu";
+import Typography from "@/components/ui/design-system/typography";
+import { getDashboardMenuItems } from "./dashboard-menu";
 import ProfileSlot from "./profile-slot";
 import { cn, styles } from "./style";
 import { useDashboard } from "./use-dashboard";
+import { useDashboardOverview } from "./use-dashboard-overview";
 
 function SurfaceCard({
   children,
@@ -40,7 +40,7 @@ function SurfaceCard({
   );
 }
 
-export default function ClientDashboardPage() {
+export default function MerchantDashboardPage() {
   const {
     closeProfileMenu,
     handleLogout,
@@ -54,6 +54,13 @@ export default function ClientDashboardPage() {
     toggleProfileMenu,
     username,
   } = useDashboard();
+  const {
+    activeDeliveries,
+    isLoadingOverview,
+    mapMarkers,
+    overviewError,
+  } = useDashboardOverview();
+  const overviewMenuItems = getDashboardMenuItems("Vue d'ensemble");
 
   return (
     <div
@@ -80,7 +87,7 @@ export default function ClientDashboardPage() {
             </Link>
           </div>
 
-          <Navbar items={dashboardMenuItems} isDarkMode={isDarkMode} />
+          <Navbar items={overviewMenuItems} isDarkMode={isDarkMode} />
         </aside>
 
         <div className={styles.mainPanel}>
@@ -93,7 +100,7 @@ export default function ClientDashboardPage() {
                 initials={initials}
                 isDarkMode={isDarkMode}
                 isLoggingOut={isLoggingOut}
-                menuItems={dashboardMenuItems}
+                menuItems={overviewMenuItems}
                 menuRef={menuRef}
                 onClose={closeProfileMenu}
                 onLogout={handleLogout}
@@ -113,12 +120,28 @@ export default function ClientDashboardPage() {
                     isDarkMode ? styles.mapSectionDark : styles.mapSectionLight,
                   )}
                 >
-                  <GrenobleDeliveryMap markers={mapMarkers} />
+                  {overviewError ? (
+                    <div className="flex h-full items-center justify-center px-6 text-center">
+                      <Typography
+                        variant="p"
+                        Component="p"
+                        className={cn(
+                          isDarkMode ? "!text-rose-300" : "!text-rose-600",
+                        )}
+                      >
+                        {overviewError}
+                      </Typography>
+                    </div>
+                  ) : (
+                    <GrenobleDeliveryMap markers={mapMarkers} />
+                  )}
                 </section>
 
                 <ActiveDeliveries
                   deliveries={activeDeliveries}
+                  error={overviewError}
                   isDarkMode={isDarkMode}
+                  isLoading={isLoadingOverview}
                 />
               </div>
             </SurfaceCard>

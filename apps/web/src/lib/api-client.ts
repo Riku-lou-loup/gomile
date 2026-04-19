@@ -1,7 +1,9 @@
-import type { ApiErrorPayload } from "../../../../shared/api-errors";
-import { createApiError } from "../../../../shared/api-errors";
 import type {
   CreateStoreInput,
+  CreateStoreResponse,
+  DeleteStoreResponse,
+  ListStoresItem,
+  UpdateStoreResponse,
   UpdateStoreInput,
   StoreResponse,
 } from "../../../../shared/store-contracts";
@@ -21,9 +23,12 @@ import type {
   UpdateApiKeyResponse,
 } from "../../../../shared/api-key-contracts";
 
-// Re-export for convenience
 export type {
   CreateStoreInput,
+  CreateStoreResponse,
+  DeleteStoreResponse,
+  ListStoresItem,
+  UpdateStoreResponse,
   UpdateStoreInput,
   StoreResponse,
   CreateOrderInput,
@@ -38,45 +43,17 @@ export type {
   GetApiKeyResponse,
   UpdateApiKeyResponse,
 };
+import { requestWithAutoRefresh } from "./protected-request";
 
-async function parseError(response: Response): Promise<string> {
-  const fallbackError = createApiError("REQUEST_FAILED");
-  const contentType = response.headers.get("content-type");
-
-  if (contentType?.includes("application/json")) {
-    const payload = (await response.json()) as Partial<ApiErrorPayload>;
-    return payload.message ?? payload.code ?? fallbackError.message;
-  }
-
-  const text = await response.text();
-  return text || fallbackError.message;
-}
-
-// fetch wrapper, 
+// Shared wrapper for protected requests.
+// If a request fails because the access token is gone or expired, it asks the
+// BFF to refresh cookies and retries the request once automatically.
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    headers: { 
-      "content-type": "application/json",
-      ...(init?.headers ?? {}),
-     },
-    credentials: "include",
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(await parseError(response));
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return (await response.json()) as T;
+  return requestWithAutoRefresh<T>(path, init);
 }
 
 export function createStore(merchantId: string, input: CreateStoreInput) {
-  return request<StoreResponse>(`/api/merchants/${merchantId}/stores`, {
+  return request<CreateStoreResponse>(`/api/merchants/${merchantId}/stores`, {
     method: "POST",
     body: JSON.stringify(input),
   });
@@ -84,7 +61,7 @@ export function createStore(merchantId: string, input: CreateStoreInput) {
 
 export function listStores(merchantId: string, isActive?: boolean) {
   const query = isActive !== undefined ? `?isActive=${isActive}` : "";
-  return request<StoreResponse[]>(`/api/merchants/${merchantId}/stores${query}`);
+  return request<ListStoresItem[]>(`/api/merchants/${merchantId}/stores${query}`);
 }
 
 export function getStore(merchantId: string, storeId: string) {
@@ -92,26 +69,26 @@ export function getStore(merchantId: string, storeId: string) {
 }
 
 export function updateStore(merchantId: string, storeId: string, input: UpdateStoreInput) {
-  return request<StoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}`, {
+  return request<UpdateStoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
 }
 
 export function disableStore(merchantId: string, storeId: string) {
-  return request<StoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}/disable`, {
+  return request<UpdateStoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}/disable`, {
     method: "POST",
   });
 }
 
 export function enableStore(merchantId: string, storeId: string) {
-  return request<StoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}/enable`, {
+  return request<UpdateStoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}/enable`, {
     method: "POST",
   });
 }
 
 export function deleteStore(merchantId: string, storeId: string) {
-  return request<{ message: string }>(`/api/merchants/${merchantId}/stores/${storeId}`, {
+  return request<DeleteStoreResponse>(`/api/merchants/${merchantId}/stores/${storeId}`, {
     method: "DELETE",
   });
 }
