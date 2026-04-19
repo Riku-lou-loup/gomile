@@ -1,0 +1,61 @@
+# Copyright (C) 2026 Gomile
+# This file is distributed under the same license as the Gomile Shipment plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Gomile Shipment 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/gomile-shipment\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-03-23T12:11:57+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: gomile-shipment\n"
+
+#. Plugin Name of the plugin
+#: gomile-shipment.php
+#: includes/class-shipping-method.php:18
+msgid "Gomile Shipment"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: gomile-shipment.php
+msgid "https://gomile.com"
+msgstr ""
+
+#. Description of the plugin
+#: gomile-shipment.php
+msgid "Méthode de livraison WooCommerce pour attribuer un livreur via Gomile."
+msgstr ""
+
+#. Author of the plugin
+#: gomile-shipment.php
+msgid "Gomile"
+msgstr ""
+
+#: includes/class-shipping-method.php:19
+msgid "Delivery through the Gomile driver network."
+msgstr ""
+
+#: includes/class-shipping-method.php:34
+#: includes/class-shipping-method.php:54
+msgid "Gomile Delivery"
+msgstr ""
+
+#: includes/class-shipping-method.php:45
+msgid "Enable"
+msgstr ""
+
+#: includes/class-shipping-method.php:47
+msgid "Enable Gomile Shipment"
+msgstr ""
+
+#: includes/class-shipping-method.php:51
+msgid "Title"
+msgstr ""
+
+#: includes/class-shipping-method.php:53
+msgid "Title shown to customers during checkout."
+msgstr ""
