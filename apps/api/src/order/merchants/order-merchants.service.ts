@@ -151,13 +151,16 @@ export class OrderService  {
     };
   }
 
-  async getMerchantOrders(user: AuthenticatedUser, merchantId: string): Promise<ListMerchantOrdersResponseDto[]> {
+  async getMerchantOrders(user: AuthenticatedUser | null, merchantId: string, orderReference?: string): Promise<ListMerchantOrdersResponseDto[]> {
     await this.existsMerchant(merchantId)
-    if (user.id !== merchantId && user.role !== Role.ADMIN) {
+    if (user && ((user.id !== merchantId) || user.role !== Role.ADMIN)) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
     return await this.prisma.order.findMany({
-      where: { merchantId },
+      where: {
+        merchantId,
+        ...(orderReference && { orderReference }),
+      },
       select : {
         id: true,
         storeId: true,
@@ -165,7 +168,8 @@ export class OrderService  {
         customerName : true,
         dropOffAddress: true,
         createdAt : true,
-        driverId: true
+        driverId: true,
+        orderReference: true,
       },
       orderBy: { createdAt: 'desc' },
     }) as ListMerchantOrdersResponseDto[]
@@ -216,6 +220,34 @@ export class OrderService  {
       },
     });
     return {message: ORDER_MESSAGE.ORDER_CANCELLED}
+  }
+
+  // cancel by order reference, use for WooCommerce, Shopify or any other plugins that has its own order id
+  async cancelOrderByReference(merchantId: string, orderReference: string): Promise<CancelOrderResponseDto> {
+    await this.existsMerchant(merchantId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { merchantId, orderReference },
+    });
+
+    if (!order) {
+      throw new NotFoundException(createApiError('ORDER_NOT_FOUND', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_CANCELLED', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.DELIVERED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_PICKED_UP', ORDER_ERRORS));
+    }
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { status: OrderStatus.CANCELLED, cancelledAt: new Date() },
+    });
+
+    return { message: ORDER_MESSAGE.ORDER_CANCELLED };
   }
 
   async verifyPickup(storeId: string, code: string) {

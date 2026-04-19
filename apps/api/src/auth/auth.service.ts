@@ -71,6 +71,7 @@ export class AuthService {
             transportType: dto.transportType,
             siret: dto.siret,
             gomileCode,
+            wallet: { create: { balance: 0 } },
           },
         },
       },

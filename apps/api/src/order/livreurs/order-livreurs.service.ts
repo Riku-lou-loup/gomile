@@ -1,5 +1,5 @@
 import { UnauthorizedException, ConflictException, ForbiddenException, GoneException, HttpException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { OrderStatus, Role, HandshakeType } from "@prisma/client";
+import { OrderStatus, Role, HandshakeType, WalletEntryType, WalletEntryStatus } from "@prisma/client";
 import { AuthenticatedUser } from "../../auth/auth.types";
 import { createApiError } from "../../common/api-error";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -252,22 +252,43 @@ export class OrderLivreursService {
     const today = new Date();
 
     await this.prisma.handshake.update({
-      where: {
-        id: handshake.id
-      },
-      data: {
-        verifiedAt: today
+      where: { id: handshake.id },
+      data: { verifiedAt: today },
+    });
+
+    const deliveredOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { deliveredAt: today, status: OrderStatus.DELIVERED },
+    });
+
+    // Credit driver wallet with reward
+    if (deliveredOrder.reward) {
+      const wallet = await this.prisma.wallet.findUnique({
+        where: { driverId },
+      });
+
+      if (wallet) {
+        await this.prisma.$transaction([
+          this.prisma.walletEntry.create({
+            data: {
+              walletId: wallet.id,
+              amount: deliveredOrder.reward,
+              type: WalletEntryType.CREDIT,
+              status: WalletEntryStatus.COMPLETED,
+            },
+          }),
+          this.prisma.wallet.update({
+            where: { id: wallet.id },
+            data: { balance: { increment: deliveredOrder.reward } },
+          }),
+          this.prisma.driver.update({
+            where: { userId: driverId },
+            data: { totalTrips: { increment: 1 } },
+          }),
+        ]);
       }
-    })
-    await this.prisma.order.update({
-      where: {
-        id: orderId
-      },
-      data: {
-        deliveredAt: today,
-        status: OrderStatus.DELIVERED
-      }
-    })
+    }
+
     return { orderId: orderId, message: ORDER_MESSAGE.ORDER_DELIVERED };
   }
 }

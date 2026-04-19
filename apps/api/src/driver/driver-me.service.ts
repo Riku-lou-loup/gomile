@@ -67,7 +67,20 @@ export class DriverMeService {
   // Check available orders using postgis
   async availableOrders(user: AuthenticatedUser) {
     return this.prisma.$queryRaw `
-    select o.* from "Order" o
+    select
+      o.id,
+      o.status,
+      o.type,
+      o."packageSize",
+      o.weight,
+      o.reward,
+      o."distanceKm",
+      o."dropOffAddress",
+      o."customerName",
+      o."createdAt",
+      s.name as store,
+      s.address as "pickupAddress"
+    from "Order" o
     join "Store" s on s.id = o."storeId"
     join "Driver" d on d."userId" = ${user.id}
     where o.status = 'SEARCHING_DRIVER'
@@ -103,37 +116,53 @@ export class DriverMeService {
     }
   }
 
+  private missionSelect = {
+    id: true,
+    status: true,
+    type: true,
+    packageSize: true,
+    weight: true,
+    reward: true,
+    distanceKm: true,
+    dropOffAddress: true,
+    customerName: true,
+    createdAt: true,
+    acceptedAt: true,
+    pickedUpAt: true,
+    deliveredAt: true,
+    store: {
+      select: {
+        name: true,
+        address: true,
+      },
+    },
+  };
+
   // Get active orders (ongoing ones)
   async getActiveOrders(user: AuthenticatedUser) {
-    const driver = await this.existsDriver(user);
+    await this.existsDriver(user);
 
-    return await this.prisma.order.findMany({
+    return this.prisma.order.findMany({
       where: {
         driverId: user.id,
-        status: {
-          in : [OrderStatus.DRIVER_ACCEPTED, OrderStatus.PICKED_UP]
-        }
+        status: { in: [OrderStatus.DRIVER_ACCEPTED, OrderStatus.PICKED_UP] },
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      select: this.missionSelect,
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   // Get past orders
   async getPastOrders(user: AuthenticatedUser) {
-    const driver = await this.existsDriver(user);
+    await this.existsDriver(user);
 
-    return await this.prisma.order.findMany ({
+    return this.prisma.order.findMany({
       where: {
         driverId: user.id,
-        status: {
-          in: [OrderStatus.DELIVERED, OrderStatus.CANCELLED]
-        }
+        status: { in: [OrderStatus.DELIVERED, OrderStatus.CANCELLED] },
       },
-      orderBy : {
-        createdAt: 'desc'
-      }
+      select: this.missionSelect,
+      orderBy: { createdAt: 'desc' },
     });
   }
 
