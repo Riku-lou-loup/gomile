@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role } from '@prisma/client';
+import { DocumentType, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID, randomBytes } from 'crypto';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
@@ -44,10 +44,9 @@ export class AuthService {
 
   async registerDriver(dto: RegisterDriverDto): Promise<AuthResponse> {
     await this.checkEmailAvailable(dto.email);
+    await this.checkPhoneAvailable(dto.phone);
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const gomileCode = await this.generateUniqueGomileCode();
-
-    await this.checkPhoneAvailable(dto.phone);
 
     const user = await this.prisma.user.create({
       data: {
@@ -63,6 +62,10 @@ export class AuthService {
             gender: dto.gender,
             avatarUrl: dto.avatarUrl,
             address: dto.address,
+            city: dto.city,
+            zipCode: dto.zipCode,
+            street: dto.street,
+            equipments: dto.equipments ?? [],
             deliveryCity: dto.deliveryCity,
             deliveryRadius: dto.deliveryRadius,
             transportType: dto.transportType,
@@ -72,6 +75,21 @@ export class AuthService {
         },
       },
     });
+
+    // Create DriverDocument records for any provided file URLs
+    const documents: { type: DocumentType; url: string }[] = [];
+    if (dto.cniFile) documents.push({ type: DocumentType.CNI, url: dto.cniFile });
+    if (dto.justificatifFile) documents.push({ type: DocumentType.OTHER, url: dto.justificatifFile });
+    if (dto.permisFile) documents.push({ type: DocumentType.DRIVING_LICENSE, url: dto.permisFile });
+    if (dto.carteGriseFile) documents.push({ type: DocumentType.REGISTRATION_CARD, url: dto.carteGriseFile });
+    if (dto.kbisFile) documents.push({ type: DocumentType.OTHER, url: dto.kbisFile });
+    if (dto.ribFile) documents.push({ type: DocumentType.RIB, url: dto.ribFile });
+
+    if (documents.length > 0) {
+      await this.prisma.driverDocument.createMany({
+        data: documents.map(doc => ({ ...doc, driverId: user.id })),
+      });
+    }
 
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
