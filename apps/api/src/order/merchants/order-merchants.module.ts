@@ -6,8 +6,11 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { JwtOrApiKeyGuard } from '../../auth/guards/jwt-or-api-key.guard';
 import { ApiKeyGuard } from '../../auth/guards/api-key.guard';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { DeliveryPricingModule } from '../../delivery/delivery-pricing.module';
+
 @Module({
+  imports: [DeliveryPricingModule],
   controllers: [OrderMerchantsController],
-  providers: [OrderService, RolesGuard, ApiKeyService, JwtOrApiKeyGuard, ApiKeyGuard,  JwtAuthGuard],
+  providers: [OrderService, RolesGuard, ApiKeyService, JwtOrApiKeyGuard, ApiKeyGuard, JwtAuthGuard],
 })
 export class OrderMerchantsModule {}
