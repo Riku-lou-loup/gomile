@@ -5,6 +5,10 @@ import {
 } from '@nestjs/common';
 import { KycStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AUTH_ERRORS } from '../auth/auth-errors';
+import { KYC_MESSAGES } from './kyc.message';
+import { createApiError } from 'src/common/api-error';
+import { KYC_ERRORS } from './kyc.error';
 
 @Injectable()
 export class KycService {
@@ -63,20 +67,42 @@ export class KycService {
     });
 
     if (!driver) {
-      throw new NotFoundException('Driver not found');
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
     }
 
     const submission = driver.kycSubmissions[0];
     // if there is no submission
     if (!submission) {
-      throw new NotFoundException('No KYC submission found');
+      throw new NotFoundException(createApiError('KYC_SUBMISSION_NOT_FOUND', KYC_ERRORS));
     }
     // front end shouldn't be able to call this if there is no kyc pending
     if (submission.status !== KycStatus.PENDING) {
-      throw new ConflictException('KYC submission is not pending');
+      throw new ConflictException(createApiError('KYC_VERIFYING_IN_PROCESS', KYC_ERRORS));
     }
 
     return { driver, submission };
+  }
+
+  async submitKyc(userId: string, documentUrl: string) {
+    const driver = await this.prisma.driver.findUnique({ where: { userId } });
+    if (!driver) {
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
+    }
+    if (driver.kycStatus === KycStatus.PENDING) {
+      throw new ConflictException(createApiError('KYC_VERIFYING_IN_PROCESS', KYC_ERRORS));
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.kycSubmission.create({
+        data: { driverId: userId, documentUrl, status: KycStatus.PENDING },
+      }),
+      this.prisma.driver.update({
+        where: { userId },
+        data: { kycStatus: KycStatus.PENDING },
+      }),
+    ]);
+
+    return { message: KYC_MESSAGES.KYC_SUBMITTED };
   }
 
   // what is my current kyc status, if rejected, why ? and what was my last submission
@@ -91,7 +117,7 @@ export class KycService {
       },
     });
     if (!driver) {
-      throw new NotFoundException('Driver profile not found');
+      throw new NotFoundException(createApiError('KYC_SUBMISSION_NOT_FOUND',KYC_ERRORS));
     }
 
     const latestSubmission = driver.kycSubmissions[0] ?? null;
