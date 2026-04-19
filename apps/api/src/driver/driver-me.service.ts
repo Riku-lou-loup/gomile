@@ -12,6 +12,7 @@ import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
 import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 import { KycStatus } from "@prisma/client";
 import { UploadService } from "../upload/upload.service";
+import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 
 @Injectable()
 export class DriverMeService {
@@ -29,17 +30,22 @@ export class DriverMeService {
     `
   }
 
-  // update driver position using earth coordinates
-  async updateDriverPosition(user: AuthenticatedUser, latitude: number, longitude: number) {
+  // Check driver exists
+  async existsDriver(user: AuthenticatedUser) {
     const driver = await this.prisma.driver.findUnique({
       where: {
         userId: user.id
       }
-    })
-
+    });
     if (!driver) {
       throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
     }
+    return driver;
+  }
+
+  // update driver position using earth coordinates
+  async updateDriverPosition(user: AuthenticatedUser, latitude: number, longitude: number) {
+    const driver = await this.existsDriver(user);
 
     await this.prisma.driver.update({
       where: {
@@ -74,14 +80,7 @@ export class DriverMeService {
 
   // Toggle driver's availabitlity (if a driver is accepting order or not
   async toggleDriverAvailability(user: AuthenticatedUser) {
-    const driver = await this.prisma.driver.findUnique({
-      where : {
-        userId: user.id
-      }
-    });
-    if (!driver) {
-      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
-    }
+    const driver = await this.existsDriver(user);
 
     if (driver.status === DriverStatus.BUSY) {
       throw new ConflictException(createApiError('DRIVER_BUSY', DRIVER_ERROR));
@@ -105,14 +104,7 @@ export class DriverMeService {
 
   // Get active orders (ongoing ones)
   async getActiveOrders(user: AuthenticatedUser) {
-    const driver = await this.prisma.driver.findUnique ({
-      where: {
-        userId: user.id
-      }
-    });
-    if (!driver) {
-      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
-    }
+    const driver = await this.existsDriver(user);
 
     return await this.prisma.order.findMany({
       where: {
@@ -129,14 +121,7 @@ export class DriverMeService {
 
   // Get past orders
   async getPastOrders(user: AuthenticatedUser) {
-    const driver = await this.prisma.driver.findUnique ({
-      where: {
-        userId: user.id
-      }
-    });
-    if (!driver) {
-      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
-    }
+    const driver = await this.existsDriver(user);
 
     return await this.prisma.order.findMany ({
       where: {
@@ -207,6 +192,7 @@ export class DriverMeService {
       await this.uploadService.deleteFile(driver.avatarUrl);
     }
 
+    // Any address or identity related update will unvalidate KYC status. Driver must then resubmit KYC documents
     await this.prisma.driver.update({
       where: { userId: user.id },
       data: {
@@ -231,6 +217,20 @@ export class DriverMeService {
     }
 
     return { message: DRIVER_MESSAGES.DRIVER_PROFILE_UPDATED };
+  }
+
+  // update session vehicle
+  async updateSessionVehicle(user: AuthenticatedUser, dto: SessionVehicleDto) {
+    const driver = await this.existsDriver(user);
+    await this.prisma.driver.update({
+      where: {
+        userId: user.id
+      },
+      data: {
+        activeVehicle: dto.vehicleType
+      }
+    })
+    return { activeVehicle: dto.vehicleType}
   }
 
 }

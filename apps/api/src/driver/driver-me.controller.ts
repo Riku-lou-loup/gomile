@@ -21,7 +21,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiTooManyRequestsResponse,
 } from "@nestjs/swagger";
-import { Role } from "@prisma/client";
+import { Role, VehicleType } from "@prisma/client";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
@@ -33,6 +33,9 @@ import { DriverMeService } from "./driver-me.service";
 import { DriverPositionDto } from "./dto/driver-position.dto";
 import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
 import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
+import { SessionVehicleDto } from "./dto/session-vehicle.dto";
+import { KycService } from "../kyc/kyc.service";
+import { SubmitKycDto } from "../kyc/dto/submit-kyc.dto";
 
 @ApiTags('[Mobile] Driver')
 @ApiBearerAuth('access-token')
@@ -43,6 +46,7 @@ export class DriverMeController {
   constructor(
     private readonly orderLivreursService: OrderLivreursService,
     private readonly driverMeService: DriverMeService,
+    private readonly kycService: KycService,
   ) {}
 
   @ApiOperation({ summary: "Get available missions nearby", description: "Returns orders in SEARCHING_DRIVER status within the driver's delivery radius using PostGIS." })
@@ -169,5 +173,32 @@ export class DriverMeController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.driverMeService.updateDriverProfile(user, dto);
+  }
+
+  @ApiOperation({ summary: "Update driver session vehicle "})
+  @ApiOkResponse({ schema: { properties: { activeVehicle: {type: 'string', enum: Object.values(VehicleType)}}}})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Patch('session-vehicle')
+  @HttpCode(HttpStatus.OK)
+  async updateSessionVehicle(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SessionVehicleDto
+  ) {
+    return this.driverMeService.updateSessionVehicle(user, dto);
+  }
+
+  @ApiOperation({ summary: "Submit KYC documents", description: "Driver submits a document URL for KYC review. Sets kycStatus to PENDING. Rejected if a submission is already pending." })
+  @ApiOkResponse({ schema: { properties: { message: { type: 'string' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiConflictResponse({ description: 'A KYC submission is already pending review' })
+  @Post('kyc')
+  @HttpCode(HttpStatus.OK)
+  async submitKyc(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SubmitKycDto,
+  ) {
+    return this.kycService.submitKyc(user.id, dto.documentUrl);
   }
 }
