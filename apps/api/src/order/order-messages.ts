@@ -1,8 +1,8 @@
 export const ORDER_MESSAGE = {
-  ORDER_CREATED : "Commande cree avec succes",
-  ORDER_ACCEPTED: "Commande acceptee avec succes",
-  ORDER_CANCELLED : "Commande annulée avec succès",
-  HANDSHAKE_ATTEMPS_FAILED : "Vous avez depasse le nombre de tentatives autorisees. Veuillez contacter votre fiable admin",
-  ORDER_DELIVERED: "Commande livree !",
-  ORDER_PICKED_UP: "Commande a ete collecte"
+  ORDER_CREATED: 'Order created successfully',
+  ORDER_ACCEPTED: 'Order accepted successfully',
+  ORDER_CANCELLED: 'Order cancelled successfully',
+  HANDSHAKE_ATTEMPS_FAILED: 'Too many incorrect attempts. Please contact your admin',
+  ORDER_DELIVERED: 'Order delivered successfully',
+  ORDER_PICKED_UP: 'Order picked up successfully',
 }

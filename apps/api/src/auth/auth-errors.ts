@@ -1,61 +1,60 @@
 export const AUTH_ERRORS = {
   INVALID_EMAIL: {
     statusCode: 400,
-    message: 'Email invalide',
+    message: 'Invalid email address',
   },
   EMAIL_ALREADY_USED: {
     statusCode: 409,
-    message: 'Email deja utilise',
+    message: 'Email already in use',
   },
   PHONE_ALREADY_USED: {
     statusCode: 409,
-    message: 'Numero de telephone deja utilise',
+    message: 'Phone number already in use',
   },
   INVALID_CREDENTIALS: {
     statusCode: 401,
-    message: 'Identifiants invalides',
+    message: 'Invalid credentials',
   },
   INVALID_ACCESS_TOKEN: {
     statusCode: 401,
-    message: "Jeton d'acces invalide",
+    message: 'Invalid access token',
   },
   INVALID_REFRESH_TOKEN: {
     statusCode: 401,
-    message: 'Jeton de rafraichissement invalide',
+    message: 'Invalid refresh token',
   },
   INVALID_API_KEY: {
     statusCode: 401,
-    message: 'Clef API invalide',
+    message: 'Invalid API key',
   },
   API_KEY_REVOKED: {
     statusCode: 403,
-    message: 'Clef API revokee',
+    message: 'API key has been revoked',
   },
   MERCHANT_NOT_FOUND: {
     statusCode: 404,
-    message: 'Marchand non trouve',
+    message: 'Merchant not found',
   },
   NOT_OWNER: {
     statusCode: 403,
-    message: "Vous n'etes pas le proprietaire de cette ressource",
+    message: 'You are not the owner of this resource',
   },
   API_KEY_NOT_FOUND: {
     statusCode: 404,
-    message: 'Clef API non trouvee',
+    message: 'API key not found',
   },
   USER_NOT_FOUND: {
     statusCode: 404,
-    message: 'Utilisateur non existant'
+    message: 'User not found',
   },
   API_KEY_EXPIRED: {
     statusCode: 401,
-    message: 'Clef API expiree'
+    message: 'API key has expired',
   },
   DRIVER_NOT_FOUND: {
     statusCode: 404,
-    message: 'Livreur non trouve',
-  }
+    message: 'Driver not found',
+  },
 } as const;
 
 export type AuthApiErrorCode = keyof typeof AUTH_ERRORS;
-

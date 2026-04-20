@@ -458,7 +458,7 @@ export class DriverMeService {
     await this.uploadService.deleteFile(doc.url);
     await this.prisma.driverDocument.delete({ where: { id: documentId } });
 
-    return { message: 'Document deleted' };
+    return { message: DRIVER_MESSAGES.DOCUMENT_DELETED };
   }
 
 }
