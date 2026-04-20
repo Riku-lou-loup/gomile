@@ -7,7 +7,7 @@ import { KycStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AUTH_ERRORS } from '../auth/auth-errors';
 import { KYC_MESSAGES } from './kyc.message';
-import { createApiError } from 'src/common/api-error';
+import { createApiError } from '../common/api-error';
 import { KYC_ERRORS } from './kyc.error';
 
 @Injectable()
