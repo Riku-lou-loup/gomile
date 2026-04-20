@@ -278,12 +278,24 @@ export class OrderLivreursService {
             },
           }),
           this.prisma.wallet.update({
-            where: { id: wallet.id },
-            data: { balance: { increment: deliveredOrder.reward } },
+            where: { 
+              id: wallet.id 
+            },
+            data: { 
+              balance: { 
+                increment: deliveredOrder.reward 
+              } 
+            },
           }),
           this.prisma.driver.update({
-            where: { userId: driverId },
-            data: { totalTrips: { increment: 1 } },
+            where: { 
+              userId: driverId 
+            },
+            data: { 
+              totalTrips: { 
+                increment: 1 
+              } 
+            },
           }),
         ]);
       }

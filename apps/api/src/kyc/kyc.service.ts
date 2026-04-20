@@ -32,7 +32,7 @@ export class KycService {
       }),
     ]);
 
-    return { message: 'KYC approved' };
+    return { message: KYC_MESSAGES.KYC_APPROVED };
   }
 
   async rejectDriverKyc(driverId: string, rejectionReason: string) {
@@ -51,7 +51,7 @@ export class KycService {
         data: { kycStatus: KycStatus.REJECTED },
       }),
     ])
-    return { message: 'KYC rejected' };
+    return { message: KYC_MESSAGES.KYC_REJECTED };
   }
 
   // find submission
