@@ -25,7 +25,7 @@ import { GetOrderResponseDto } from "../dto/get-order-response.dto";
 import { ListMerchantOrdersResponseDto } from "../dto/list-merchant-orders-response";
 import { HandshakeDto } from "../dto/handshake.dto";
 
-@ApiTags('Order/Merchant')
+@ApiTags('[Web][Merchant]')
 @Controller('/merchants/:merchantId')
 export class OrderMerchantsController {
 
@@ -52,6 +52,7 @@ export class OrderMerchantsController {
     return this.orderService.createOrder(user, storeId, merchantId, dto);
   }
 
+  @ApiTags('[Admin]')
   @ApiOperation({ summary: 'List all orders for a merchant', description: 'Merchants can only list their own orders. Admins can list orders for any merchant.' })
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ type: ListMerchantOrdersResponseDto, isArray: true })
