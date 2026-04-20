@@ -276,7 +276,6 @@ model KycSubmission {
   driverId String    @db.Uuid
   status   KycStatus @default(PENDING)
 
-  documentUrl     String
   rejectionReason String?
 
   createdAt DateTime @default(now())

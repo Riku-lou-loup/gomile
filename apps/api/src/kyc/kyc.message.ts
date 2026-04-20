@@ -1,6 +1,6 @@
 export const KYC_MESSAGES = {
-  KYC_APPROVED : "KYC approved",
+  KYC_APPROVED: "KYC approved",
   KYC_REJECTED: "KYC rejected",
-  KYC_VERIFICATION_IN_PROGRESS: "KYC documents is being verified by ADMIN",
-  KYC_SUBMITTED: "KYC documents has been submitted and now pending for review"
+  KYC_VERIFICATION_IN_PROGRESS: "KYC documents are being verified by admin",
+  KYC_SUBMITTED: "KYC documents submitted and pending review"
 }

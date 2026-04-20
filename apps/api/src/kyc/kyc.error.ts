@@ -10,6 +10,13 @@ export const KYC_ERRORS = {
   KYC_SUBMISSION_NOT_FOUND: {
     statusCode: 404,
     message: "No KYC submission found"
+  },
+  KYC_NO_DOCUMENTS: {
+    statusCode: 409,
+    message: "Please upload at least one document before submitting for KYC review"
+  },
+  KYC_ALREADY_APPROVED: {
+    statusCode: 409,
+    message: "KYC already approved, no pending documents to review"
   }
-
 }
