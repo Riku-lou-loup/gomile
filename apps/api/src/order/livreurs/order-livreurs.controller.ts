@@ -20,13 +20,14 @@ import { OrderLivreursService } from "./order-livreurs.service";
 import { ListDriverOrdersResponseDto } from "../dto/list-livreurs-orders-response";
 import { HandshakeDto } from "../dto/handshake.dto";
 
-@ApiTags('Order/Livreurs')
+@ApiTags('[Web][Livreurs]')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('/livreurs/:driverId')
 export class OrderLivreursController {
   constructor(private readonly orderLivreursService: OrderLivreursService) {}
 
+  @ApiTags('[Admin]')
   @ApiOperation({ summary: "List orders for a driver", description: "Filter by status group: active (accepted/picked up), finished (delivered), or cancelled. Returns all orders if no filter provided." })
   @ApiQuery({ name: 'filter', required: false, enum: ['active', 'finished', 'cancelled'], description: 'Filter orders by status group' })
   @ApiOkResponse({ type: ListDriverOrdersResponseDto, isArray: true })

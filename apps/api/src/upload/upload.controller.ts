@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PresignRequestDto } from './dto/presign-request.dto';
 import { UploadService } from './upload.service';
 
-@ApiTags('Uploads')
+@ApiTags('[Uploads]')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
 @Controller('uploads')

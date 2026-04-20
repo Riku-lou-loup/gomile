@@ -36,6 +36,7 @@ import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
 import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 import { KycService } from "../kyc/kyc.service";
+import { KycStatusResponseDto } from "../kyc/dto/kyc-status-response.dto";
 import { DashboardResponseDto } from "./dto/dashboard-response.dto";
 import { WithdrawalRequestDto } from "./dto/withdrawal-request.dto";
 import { CreateDriverDocumentDto } from "./dto/create-driver-document.dto";
@@ -189,6 +190,16 @@ export class DriverMeController {
     @Body() dto: SessionVehicleDto
   ) {
     return this.driverMeService.updateSessionVehicle(user, dto);
+  }
+
+  @ApiOperation({ summary: "Get KYC status", description: "Returns the driver's current KYC status, uploaded documents, and latest submission." })
+  @ApiOkResponse({ type: KycStatusResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('kyc')
+  @HttpCode(HttpStatus.OK)
+  async getKycStatus(@CurrentUser() user: AuthenticatedUser) {
+    return this.kycService.getMyKycStatus(user.id);
   }
 
   @ApiOperation({ summary: "Submit for KYC review", description: "Triggers a KYC review request. Driver must have uploaded at least one document first. Sets kycStatus to PENDING." })

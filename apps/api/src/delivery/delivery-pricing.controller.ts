@@ -5,7 +5,7 @@ import { DeliveryPricingService } from './delivery-pricing.service';
 import { OpenRouteService } from './openrouteservice.service';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
 
-@ApiTags('delivery-pricing')
+@ApiTags('[Plugin]')
 @Controller()
 export class DeliveryPricingController {
   constructor(

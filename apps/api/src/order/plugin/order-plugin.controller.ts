@@ -10,7 +10,7 @@ import { CancelOrderResponseDto } from "../dto/cancel-order-response";
 import { GetOrderResponseDto } from "../dto/get-order-response.dto";
 import { ListMerchantOrdersResponseDto } from "../dto/list-merchant-orders-response";
 
-@ApiTags('Order/Plugin')
+@ApiTags('[Plugin]')
 @ApiHeader({ name: 'x-api-key', description: 'API key scoped to merchant and store', required: true })
 @Controller('plugin/orders')
 @UseGuards(ApiKeyGuard)
