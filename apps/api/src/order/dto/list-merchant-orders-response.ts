@@ -24,4 +24,6 @@ export class ListMerchantOrdersResponseDto {
   @ApiProperty({ description: "Current order status", enum: OrderStatus, example: OrderStatus.SEARCHING_DRIVER })
   status: OrderStatus;
 
+  @ApiProperty({ description: "External order reference (WooCommerce, Shopify, etc.)", example: '104322', nullable: true })
+  orderReference: string | null;
 }

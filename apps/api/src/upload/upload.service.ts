@@ -1,8 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 import * as path from 'path'
+import { PresignResponseDto } from './dto/presign-response.dto'
 
 @Injectable()
 export class UploadService {
@@ -26,7 +27,7 @@ export class UploadService {
   }
 
   // S3 database upload authorization url
-  async presign(filename: string, contentType: string): Promise<{uploadUrl: string; fileUrl: string}> {
+  async presign(filename: string, contentType: string): Promise<PresignResponseDto> {
     const ext = path.extname(filename);
     const key = `uploads/${randomUUID()}${ext}`;
 
@@ -36,8 +37,13 @@ export class UploadService {
       ContentType: contentType,
     });
     const uploadUrl = await getSignedUrl(this.s3, command, {expiresIn: 300}); // 5 minutes expiration
-    const fileUrl = `https://${this.bucket}.s3.${process.env.AWS_REGIONS}.amazonaws.com/${key}`;
-    return { uploadUrl, fileUrl };
+    const fileUrl = `https://${this.bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return { uploadUrl: uploadUrl, fileUrl: fileUrl };
+  }
 
+  async deleteFile(fileUrl: string): Promise<void> {
+    const url = new URL(fileUrl);
+    const key = url.pathname.slice(1); // remove leading "/"
+    await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 }

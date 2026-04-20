@@ -62,6 +62,24 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PackageSize {
+  SMALL
+  MEDIUM
+  LARGE
+  EXTRA_LARGE
+}
+
+enum OrderType {
+  FOOD
+  PHARMACY
+  GROCERY
+  CLOTHING
+  ELECTRONICS
+  FURNITURE
+  DOCUMENTS
+  OTHER
+}
+
 enum HandshakeType {
   A
   B
@@ -165,6 +183,15 @@ model Order {
   driverId   String?     @db.Uuid
   status     OrderStatus @default(SEARCHING_DRIVER)
 
+  // Order info
+  type           OrderType
+  packageSize    PackageSize  @default(MEDIUM)
+  weight         Float?
+  deliveryFee    Float?
+  reward         Float?
+  distanceKm     Float?
+  orderReference String?      @unique
+
   customerName   String
   customerPhone  String
   dropOffAddress String
@@ -249,7 +276,6 @@ model KycSubmission {
   driverId String    @db.Uuid
   status   KycStatus @default(PENDING)
 
-  documentUrl     String
   rejectionReason String?
 
   createdAt DateTime @default(now())
