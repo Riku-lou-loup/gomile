@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Controller,
   Param,
   HttpStatus,
@@ -35,8 +36,9 @@ import { DriverProfileResponseDto } from "./dto/driver-profile-response.dto";
 import { UpdateDriverProfileDto } from "./dto/update-driver-profile.dto";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 import { KycService } from "../kyc/kyc.service";
-import { SubmitKycDto } from "../kyc/dto/submit-kyc.dto";
 import { DashboardResponseDto } from "./dto/dashboard-response.dto";
+import { WithdrawalRequestDto } from "./dto/withdrawal-request.dto";
+import { CreateDriverDocumentDto } from "./dto/create-driver-document.dto";
 
 @ApiTags('[Mobile] Driver')
 @ApiBearerAuth('access-token')
@@ -189,18 +191,15 @@ export class DriverMeController {
     return this.driverMeService.updateSessionVehicle(user, dto);
   }
 
-  @ApiOperation({ summary: "Submit KYC documents", description: "Driver submits a document URL for KYC review. Sets kycStatus to PENDING. Rejected if a submission is already pending." })
+  @ApiOperation({ summary: "Submit for KYC review", description: "Triggers a KYC review request. Driver must have uploaded at least one document first. Sets kycStatus to PENDING." })
   @ApiOkResponse({ schema: { properties: { message: { type: 'string' } } } })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
   @ApiNotFoundResponse({ description: 'Driver not found' })
-  @ApiConflictResponse({ description: 'A KYC submission is already pending review' })
+  @ApiConflictResponse({ description: 'A KYC submission is already pending, or no documents uploaded yet' })
   @Post('kyc')
   @HttpCode(HttpStatus.OK)
-  async submitKyc(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: SubmitKycDto,
-  ) {
-    return this.kycService.submitKyc(user.id, dto.documentUrl);
+  async submitKyc(@CurrentUser() user: AuthenticatedUser) {
+    return this.kycService.submitKyc(user.id);
   }
 
   @ApiOperation({ summary: "Retrieve driver dashboard", description: "Driver dashboard contains the primary informations of a driver of the day, including its current status, total earnings, last known location as well as its coverage radius"})
@@ -213,5 +212,121 @@ export class DriverMeController {
     @CurrentUser() user: AuthenticatedUser
   ) {
     return this.driverMeService.getDashboard(user);
+  }
+
+  @ApiOperation({ summary: "Get wallet", description: "Returns the driver's wallet balance, currency and pending amount." })
+  @ApiOkResponse({ schema: { properties: { 
+    balance: { 
+      type: 'number' 
+    }, 
+    currency: { 
+      type: 'string' 
+    }, 
+    pendingAmount: { 
+      type: 'number' 
+    } 
+  } 
+} 
+})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('wallet')
+  @HttpCode(HttpStatus.OK)
+  async getWallet(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getWallet(user);
+  }
+
+  @ApiOperation({ summary: "Get wallet entries", description: "Returns the driver's wallet transaction history." })
+  @ApiOkResponse({ schema: { 
+    type: 'array', 
+    items: { properties: { 
+      id: { 
+        type: 'string' 
+      }, 
+      type: { 
+        type: 'string' 
+      }, 
+      amount: { 
+        type: 'number' 
+      }, 
+      status: { 
+        type: 'string' 
+      }, 
+      createdAt: { 
+        type: 'string' 
+      } 
+    } 
+  } 
+} 
+})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('wallet/entries')
+  @HttpCode(HttpStatus.OK)
+  async getWalletEntries(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getWalletEntries(user);
+  }
+
+  @ApiOperation({ summary: "Request a withdrawal", description: "Driver requests a withdrawal from their wallet. Amount must be positive and not exceed available balance." })
+  @ApiOkResponse({ schema: { properties: { message: { type: 'string' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @ApiConflictResponse({ description: 'Insufficient balance or invalid amount' })
+  @Post('wallet/withdrawals')
+  @HttpCode(HttpStatus.OK)
+  async requestWithdrawal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: WithdrawalRequestDto,
+  ) {
+    return this.driverMeService.requestWithdrawal(user, dto.amount);
+  }
+
+  @ApiOperation({ summary: "List uploaded documents", description: "Returns all typed documents (license, CNI, RIB, etc.) uploaded by the driver." })
+  @ApiOkResponse({ schema: { type: 'array', items: { properties: {
+    id: { type: 'string' },
+    type: { type: 'string' },
+    url: { type: 'string' },
+    verified: { type: 'boolean' },
+    rejectionReason: { type: 'string', nullable: true },
+    createdAt: { type: 'string' },
+  }}}})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Get('documents')
+  @HttpCode(HttpStatus.OK)
+  async getDocuments(@CurrentUser() user: AuthenticatedUser) {
+    return this.driverMeService.getDocuments(user);
+  }
+
+  @ApiOperation({ summary: "Upload a document", description: "Stores a typed document (license, CNI, RIB, etc.). Get the URL first via POST /uploads/presign." })
+  @ApiOkResponse({ schema: { properties: {
+    id: { type: 'string' },
+    type: { type: 'string' },
+    url: { type: 'string' },
+    verified: { type: 'boolean' },
+    createdAt: { type: 'string' },
+  }}})
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  @Post('documents')
+  @HttpCode(HttpStatus.OK)
+  async uploadDocument(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateDriverDocumentDto,
+  ) {
+    return this.driverMeService.uploadDocument(user, dto);
+  }
+
+  @ApiOperation({ summary: "Delete a document", description: "Deletes the document record and removes the file from S3." })
+  @ApiOkResponse({ schema: { properties: { message: { type: 'string' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Document not found or does not belong to driver' })
+  @Delete('documents/:documentId')
+  @HttpCode(HttpStatus.OK)
+  async deleteDocument(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('documentId') documentId: string,
+  ) {
+    return this.driverMeService.deleteDocument(user, documentId);
   }
 }

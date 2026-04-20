@@ -14,6 +14,7 @@ import { KycStatus } from "@prisma/client";
 import { UploadService } from "../upload/upload.service";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 import { DashboardResponseDto } from "./dto/dashboard-response.dto";
+import { CreateDriverDocumentDto } from "./dto/create-driver-document.dto";
 
 @Injectable()
 export class DriverMeService {
@@ -301,6 +302,163 @@ export class DriverMeService {
       },
       coverageRadiusMeters: driver.deliveryRadius * 1000
     }
+  }
+
+  // Get driver's wallet information
+  async getWallet(user: AuthenticatedUser) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { driverId: user.id },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
+    }
+
+    const pendingAmount = await this.prisma.walletEntry.aggregate({
+      where: { walletId: wallet.id, status: WalletEntryStatus.PENDING },
+      _sum: { amount: true },
+    });
+
+    return {
+      balance: wallet.balance,
+      currency: 'EUR',
+      pendingAmount: pendingAmount._sum.amount ?? 0,
+    };
+  }
+
+  // Get wallet entries, aka operations
+  async getWalletEntries(user: AuthenticatedUser) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { driverId: user.id },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
+    }
+
+    return this.prisma.walletEntry.findMany({
+      where: { walletId: wallet.id },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Request withdrawal will create an entry with status of PENDING
+  async requestWithdrawal(user: AuthenticatedUser, amount: number) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { driverId: user.id },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
+    }
+
+    if (amount <= 0) {
+      throw new ConflictException(createApiError('INVALID_WITHDRAWAL_AMOUNT', DRIVER_ERROR));
+    }
+
+    if (wallet.balance < amount) {
+      throw new ConflictException(createApiError('INSUFFICIENT_BALANCE', DRIVER_ERROR));
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.walletEntry.create({
+        data: {
+          walletId: wallet.id,
+          amount,
+          type: WalletEntryType.DEBIT,
+          status: WalletEntryStatus.PENDING,
+        },
+      }),
+      this.prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: { decrement: amount } },
+      }),
+    ]);
+
+    return { message: DRIVER_MESSAGES.WITHDRAWAL_REQUESTED };
+  }
+
+  async getDocuments(user: AuthenticatedUser) {
+    await this.existsDriver(user);
+    return this.prisma.driverDocument.findMany({
+      where: { driverId: user.id },
+      select: {
+        id: true,
+        type: true,
+        url: true,
+        verified: true,
+        rejectionReason: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async uploadDocument(user: AuthenticatedUser, dto: CreateDriverDocumentDto) {
+    const driver = await this.existsDriver(user);
+
+    const oldDocument = await this.prisma.driverDocument.findFirst({
+      where: { 
+        driverId: user.id, 
+        type: dto.type 
+      },
+    });
+
+    if (oldDocument) {
+      await this.uploadService.deleteFile(oldDocument.url);
+      await this.prisma.driverDocument.delete({ 
+        where: { 
+          id: oldDocument.id 
+        } 
+      });
+    }
+
+    const updateTransaction = await this.prisma.$transaction([
+      this.prisma.driverDocument.create({
+        data: { 
+          driverId: user.id, 
+          type: dto.type, 
+          url: dto.url },
+        select: { 
+          id: true, 
+          type: true, 
+          url: true, 
+          verified: true, createdAt: true },
+      }),
+      // Update driver status back to NOT_SUBMITTED so driver can call submit KYC
+      ...(driver.kycStatus === KycStatus.ACCEPTED || driver.kycStatus === KycStatus.REJECTED
+        ? [this.prisma.driver.update({
+            where: { userId: user.id },
+            data: { kycStatus: KycStatus.NOT_SUBMITTED },
+          })]
+        : []),
+    ]);
+
+    return updateTransaction[0];
+  }
+
+  async deleteDocument(user: AuthenticatedUser, documentId: string) {
+    await this.existsDriver(user);
+
+    const doc = await this.prisma.driverDocument.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!doc || doc.driverId !== user.id) {
+      throw new NotFoundException(createApiError('DRIVER_NOT_FOUND', AUTH_ERRORS));
+    }
+
+    await this.uploadService.deleteFile(doc.url);
+    await this.prisma.driverDocument.delete({ where: { id: documentId } });
+
+    return { message: 'Document deleted' };
   }
 
 }
