@@ -15,6 +15,7 @@ import { UploadService } from "../upload/upload.service";
 import { SessionVehicleDto } from "./dto/session-vehicle.dto";
 import { DashboardResponseDto } from "./dto/dashboard-response.dto";
 import { CreateDriverDocumentDto } from "./dto/create-driver-document.dto";
+import { KYC_ERRORS } from "src/kyc/kyc.error";
 
 @Injectable()
 export class DriverMeService {
@@ -404,6 +405,12 @@ export class DriverMeService {
   async uploadDocument(user: AuthenticatedUser, dto: CreateDriverDocumentDto) {
     const driver = await this.existsDriver(user);
 
+    // Upload no longer available when admin is verifying the documents. 
+    // Of course, drivers can update their documents after once KYC status is verified (for example, outdated documents need to be updated)
+    if (driver.kycStatus === KycStatus.PENDING) {
+      throw new ConflictException(createApiError('KYC_VERIFYING_IN_PROCESS', KYC_ERRORS));
+    }
+
     const oldDocument = await this.prisma.driverDocument.findFirst({
       where: { 
         driverId: user.id, 
@@ -411,6 +418,7 @@ export class DriverMeService {
       },
     });
 
+    // Removing old documents from S3 database as well
     if (oldDocument) {
       await this.uploadService.deleteFile(oldDocument.url);
       await this.prisma.driverDocument.delete({ 
@@ -445,7 +453,12 @@ export class DriverMeService {
   }
 
   async deleteDocument(user: AuthenticatedUser, documentId: string) {
-    await this.existsDriver(user);
+    const driver = await this.existsDriver(user);
+
+    // KYC documents validated can only be updated by another document, and should not be able to be deleted
+    if (driver.kycStatus === KycStatus.ACCEPTED) {
+      throw new ConflictException(createApiError('KYC_ALREADY_APPROVED', KYC_ERRORS));
+    }
 
     const doc = await this.prisma.driverDocument.findUnique({
       where: { id: documentId },
