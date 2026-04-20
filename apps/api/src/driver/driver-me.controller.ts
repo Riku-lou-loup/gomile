@@ -77,6 +77,21 @@ export class DriverMeController {
     return this.orderLivreursService.acceptOrder(user, user.id, missionId);
   }
 
+  @ApiOperation({ summary: "Get pickup code (handshake A)", description: "Returns the type A pickup code the driver must show to the merchant. Only available while order is in DRIVER_ACCEPTED status." })
+  @ApiOkResponse({ schema: { properties: { pickupCode: { type: 'string', example: '048291' } } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
+  @ApiNotFoundResponse({ description: 'Mission not found' })
+  @ApiConflictResponse({ description: 'Order is no longer in pickup phase' })
+  @ApiInternalServerErrorResponse({ description: 'Handshake not found' })
+  @Get('missions/:missionId/handshake/pickup-code')
+  @HttpCode(HttpStatus.OK)
+  async getPickupCode(
+    @Param('missionId') missionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.orderLivreursService.getPickupCode(user, user.id, missionId);
+  }
+
   @ApiOperation({ summary: "Pick up a mission (handshake A — merchant code)", description: "Merchant provides driver a code, driver must enter it to validate pick up. 3 attempts allowed." })
   @ApiOkResponse({ description: 'Mission picked up successfully', schema: { properties: { orderId: { type: 'string' }, message: { type: 'string' } } } })
   @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })

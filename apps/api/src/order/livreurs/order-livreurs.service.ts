@@ -109,6 +109,38 @@ export class OrderLivreursService {
     };
   }
 
+  // Get pickup code for a driver and an order
+  async getPickupCode(user: AuthenticatedUser, driverId: string, orderId: string) {
+    await this.existsDriver(driverId);
+    if (user.id !== driverId) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
+    }
+
+    const order = await this.existsOrder(orderId);
+
+    if (order.driverId !== driverId) {
+      throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
+    }
+
+    if (order.status !== OrderStatus.DRIVER_ACCEPTED) {
+      throw new ConflictException(createApiError('ORDER_PICKUP_NO_LONGER_AVAILABLE', ORDER_ERRORS));
+    }
+
+    const handshake = await this.prisma.handshake.findUnique({
+      where: { orderId_type: { orderId, type: HandshakeType.A } },
+    });
+
+    if (!handshake) {
+      throw new InternalServerErrorException(createApiError('HANDSHAKE_NOT_FOUND', ORDER_ERRORS));
+    }
+
+    if (handshake.expiresAt.getTime() < Date.now()) {
+      throw new GoneException(createApiError('HANDSHAKE_EXPIRED', ORDER_ERRORS));
+    }
+
+    return { pickupCode: handshake.code };
+  }
+
   async pickupOrder(user: AuthenticatedUser, driverId: string, orderId: string, pickupCode: string) {
     await this.existsDriver(driverId);
     if (user.id !== driverId) {
