@@ -7,5 +7,6 @@ import { ApiKeyService } from '../auth/api-key.service';
 @Module({
   controllers: [DeliveryPricingController],
   providers: [DeliveryPricingService, OpenRouteService, ApiKeyService],
+  exports: [DeliveryPricingService, OpenRouteService],
 })
 export class DeliveryPricingModule {}

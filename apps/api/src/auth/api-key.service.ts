@@ -168,7 +168,7 @@ export class ApiKeyService {
     }
 
     // Update an API key (name and/or expiresAt)
-    async updateApiKey(user: AuthenticatedUser, merchantId: string, apiKeyId: string, name?: string, expiresAt?: string) {
+    async updateApiKey(user: AuthenticatedUser, merchantId: string, apiKeyId: string, name?: string, expiresAt?: string | null) {
         if (user.id !== merchantId) {
             throw new ForbiddenException(createApiError('NOT_OWNER', AUTH_ERRORS));
         }
@@ -187,8 +187,8 @@ export class ApiKeyService {
         return this.prisma.merchantApiKey.update({
             where: { id: apiKeyId },
             data: {
-                ...(name && { name }),
-                ...(expiresAt && { expiresAt: new Date(expiresAt) }),
+                ...(name !== undefined && { name }),
+                ...(expiresAt !== undefined && { expiresAt: expiresAt === null ? null : new Date(expiresAt) }),
             },
             select: {
                 id: true,

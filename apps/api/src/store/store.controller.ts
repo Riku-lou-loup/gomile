@@ -40,7 +40,7 @@ import { DeleteStoreResponseDto } from './dto/delete-store-response.dto';
 import { GetStoreResponseDto } from './dto/get-store-response.dto';
 import { ListStoresResponseDto } from './dto/list-stores-response.dto';
 
-@ApiTags('Store')
+@ApiTags('[Web][Store]')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('merchants/:merchantId/stores')
