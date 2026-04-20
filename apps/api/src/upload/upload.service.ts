@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 import * as path from 'path'
+import { PresignResponseDto } from './dto/presign-response.dto'
 
 @Injectable()
 export class UploadService {
@@ -26,7 +27,7 @@ export class UploadService {
   }
 
   // S3 database upload authorization url
-  async presign(filename: string, contentType: string): Promise<{uploadUrl: string; fileUrl: string}> {
+  async presign(filename: string, contentType: string): Promise<PresignResponseDto> {
     const ext = path.extname(filename);
     const key = `uploads/${randomUUID()}${ext}`;
 
@@ -37,7 +38,7 @@ export class UploadService {
     });
     const uploadUrl = await getSignedUrl(this.s3, command, {expiresIn: 300}); // 5 minutes expiration
     const fileUrl = `https://${this.bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-    return { uploadUrl, fileUrl };
+    return { uploadUrl: uploadUrl, fileUrl: fileUrl };
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
