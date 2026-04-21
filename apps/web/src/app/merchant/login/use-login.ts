@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
 import { login, logout } from "@/lib/auth-client";
-import { primeMerchantSession } from "@/lib/merchant-session";
+import {
+  getCurrentMerchantProfile,
+  primeMerchantSession,
+} from "@/lib/merchant-session";
 
 export function useLogin() {
   const router = useRouter();
@@ -41,6 +44,13 @@ export function useLogin() {
       }
 
       primeMerchantSession(session);
+
+      try {
+        await getCurrentMerchantProfile();
+      } catch {
+        // Best-effort preload so the dashboard can show merchant.name immediately.
+      }
+
       setSuccess("Connexion reussie. Redirection vers votre dashboard...");
 
       startTransition(() => {
