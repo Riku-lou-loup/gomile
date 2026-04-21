@@ -23,6 +23,9 @@ export function useRegister() {
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
+    const phoneRaw = String(formData.get("phone") ?? "").trim();
+    const phoneDigits = phoneRaw.replace(/\D/g, "");
+    const phone = phoneDigits.length > 4 ? phoneRaw : undefined;
 
     if (!name || !email || !password) {
       setError("Renseignez le nom du commerce, l'e-mail et le mot de passe.");
@@ -35,7 +38,12 @@ export function useRegister() {
     }
 
     try {
-      const session = await registerMerchant({ name, email, password });
+      const session = await registerMerchant({
+        name,
+        email,
+        password,
+        ...(phone ? { phone } : {}),
+      });
 
       if (session.user.role === "ADMIN") {
         setError("Attention, il y a tentative de hack.");

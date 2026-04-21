@@ -10,7 +10,8 @@ import {
 } from "@/lib/dashboard-session";
 import {
   clearMerchantSession,
-  getCurrentMerchantSession,
+  getMerchantProfileUpdatedEventName,
+  getCurrentMerchantProfile,
 } from "@/lib/merchant-session";
 
 export type ThemeMode = "light" | "dark";
@@ -26,18 +27,12 @@ function getStoredTheme(): ThemeMode {
     : "light";
 }
 
-function isMerchantRole(role: string) {
-  return role === "MERCHANT" || role === "ADMIN";
-}
-
-function resolveDashboardUsername(user: { email: string }) {
-  const merchantName = (user as { name?: string }).name;
-
-  if (typeof merchantName === "string" && merchantName.trim().length > 0) {
-    return merchantName.trim();
+function resolveDashboardUsername(profile: { name: string; email: string }) {
+  if (profile.name.trim().length > 0) {
+    return profile.name.trim();
   }
 
-  return buildDashboardUsername(user.email);
+  return buildDashboardUsername(profile.email);
 }
 
 export function useDashboard() {
@@ -61,13 +56,13 @@ export function useDashboard() {
 
     async function loadMerchantName() {
       try {
-        const session = await getCurrentMerchantSession();
+        const profile = await getCurrentMerchantProfile();
 
-        if (!isActive || !isMerchantRole(session.user.role)) {
+        if (!isActive) {
           return;
         }
 
-        setUsername(resolveDashboardUsername(session.user));
+        setUsername(resolveDashboardUsername(profile));
       } catch {
         if (isActive) {
           setUsername("Client");
@@ -79,6 +74,33 @@ export function useDashboard() {
 
     return () => {
       isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleMerchantProfileUpdated(event: Event) {
+      const detail = (
+        event as CustomEvent<{ name: string; email: string } | null>
+      ).detail;
+
+      if (!detail) {
+        setUsername("Client");
+        return;
+      }
+
+      setUsername(resolveDashboardUsername(detail));
+    }
+
+    window.addEventListener(
+      getMerchantProfileUpdatedEventName(),
+      handleMerchantProfileUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        getMerchantProfileUpdatedEventName(),
+        handleMerchantProfileUpdated,
+      );
     };
   }, []);
 

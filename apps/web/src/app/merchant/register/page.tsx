@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Background from "@/components/ui/auth/background";
 import Typography from "@/components/ui/design-system/typography";
@@ -15,10 +16,13 @@ import ErrorMessage from "@/components/ui/design-system/messages/errorMessage";
 import GmailIcon from "@/components/ui/icons/GmailIcon";
 import FacebookIcon from "@/components/ui/icons/FacebookIcon";
 import { Logo } from "@/components/Logo/Logo";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 import { styles } from "../login/styles";
 import { useRegister } from "./use-register";
 
 export default function MerchantRegisterPage() {
+  const [phone, setPhone] = useState("");
   const { error, handleSubmit, isPending, showPassword, toggleShowPassword } =
     useRegister();
 
@@ -109,6 +113,27 @@ export default function MerchantRegisterPage() {
                 inputWrapperClassName={styles.fieldWrapper}
                 className={styles.fieldInput}
               />
+
+              <div className={styles.fieldContainer}>
+                <PhoneInput
+                  defaultCountry="fr"
+                  value={phone}
+                  onChange={setPhone}
+                  name="phone"
+                  placeholder="Numero de telephone"
+                  inputProps={{
+                    id: "merchant-phone",
+                    autoComplete: "tel",
+                    "aria-label": "Numero de telephone",
+                  }}
+                  className={styles.phoneInputRoot}
+                  inputClassName={styles.phoneInputField}
+                  countrySelectorStyleProps={{
+                    buttonClassName: styles.phoneCountryButton,
+                    dropdownArrowClassName: styles.phoneCountryArrow,
+                  }}
+                />
+              </div>
 
               <Input
                 id="merchant-password"

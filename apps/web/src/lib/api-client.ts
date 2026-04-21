@@ -23,6 +23,19 @@ import type {
   UpdateApiKeyResponse,
 } from "../../../../shared/api-key-contracts";
 
+export interface MerchantProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  createdAt: string;
+}
+
+export interface UpdateMerchantProfileInput {
+  name?: string;
+  phone?: string;
+}
+
 export type {
   CreateStoreInput,
   CreateStoreResponse,
@@ -146,5 +159,19 @@ export function updateApiKey(merchantId: string, apiKeyId: string, input: Update
 export function revokeApiKey(merchantId: string, apiKeyId: string) {
   return request<void>(`/api/merchants/${merchantId}/api-keys/${apiKeyId}/revoke`, {
     method: "POST",
+  });
+}
+
+export function getMerchantProfile(merchantId: string) {
+  return request<MerchantProfileResponse>(`/api/merchants/${merchantId}`);
+}
+
+export function updateMerchantProfile(
+  merchantId: string,
+  input: UpdateMerchantProfileInput,
+) {
+  return request<{ name?: string; phone?: string }>(`/api/merchants/${merchantId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
   });
 }

@@ -24,7 +24,14 @@ export const styles = {
 
   form: "mt-6 space-y-4 lg:mt-7 lg:space-y-5",
 
-  fieldContainer: "",
+  fieldContainer: "w-full",
+  phoneInputRoot:
+    "!flex !w-full [--react-international-phone-height:3.75rem] lg:[--react-international-phone-height:4.35rem] [--react-international-phone-border-radius:1.4rem] [--react-international-phone-border-color:rgba(15,23,42,0.85)] [--react-international-phone-background-color:#fff] [--react-international-phone-text-color:#020617] [--react-international-phone-dropdown-item-text-color:#0f172a] [--react-international-phone-dropdown-item-background-color:#fff] [--react-international-phone-dropdown-item-hover-background-color:#f1f5f9] [--react-international-phone-dropdown-item-dial-code-color:#475569] [--react-international-phone-country-selector-background-color:#fff] [--react-international-phone-country-selector-background-color-hover:#f8fafc] [--react-international-phone-country-selector-border-color:rgba(15,23,42,0.85)] [--react-international-phone-country-selector-border-radius:1.4rem_0_0_1.4rem] [--react-international-phone-input-border-color:rgba(15,23,42,0.85)] [--react-international-phone-input-border-radius:0_1.4rem_1.4rem_0] [--react-international-phone-dropdown-shadow:0_18px_50px_rgba(15,23,42,0.16)]",
+  phoneInputField:
+    "!h-[3.75rem] !min-h-[3.75rem] !w-full !flex-1 !text-[1.05rem] !text-slate-950 placeholder:!text-slate-700 lg:!h-[4.35rem] lg:!min-h-[4.35rem] lg:!text-[1.2rem]",
+  phoneCountryButton:
+    "!h-[3.75rem] !min-h-[3.75rem] !shrink-0 !border-2 !border-slate-700/85 focus:!border-primary-light lg:!h-[4.35rem] lg:!min-h-[4.35rem]",
+  phoneCountryArrow: "!text-slate-700",
   fieldWrapper:
     "h-[3.75rem] rounded-[1.4rem] border-2 border-slate-700/85 bg-white px-4 focus-within:!border-primary-light focus-within:ring-4 focus-within:ring-emerald-100 lg:h-[4.35rem]",
   fieldInput:
