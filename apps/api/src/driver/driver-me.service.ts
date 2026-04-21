@@ -460,6 +460,10 @@ export class DriverMeService {
       throw new ConflictException(createApiError('KYC_ALREADY_APPROVED', KYC_ERRORS));
     }
 
+    if (driver.kycStatus === KycStatus.PENDING) {
+      throw new ConflictException(createApiError('KYC_VERIFYING_IN_PROCESS', KYC_ERRORS));
+    }
+
     const doc = await this.prisma.driverDocument.findUnique({
       where: { id: documentId },
     });
