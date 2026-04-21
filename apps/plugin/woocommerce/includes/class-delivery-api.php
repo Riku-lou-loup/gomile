@@ -184,10 +184,7 @@ class Gomile_Shipment_Delivery_API {
             'body' => array(
                 'pickupAddress' => $pickup_address,
                 'dropoffAddress' => $dropoff_address,
-                'weightGrams' => isset($package_totals['total_weight']) ? (int) ($package_totals['total_weight'] * 1000) : 1,
-                'lengthCm' => isset($package_totals['max_length_cm']) ? (int) $package_totals['max_length_cm'] : 1,
-                'widthCm' => isset($package_totals['max_width_cm']) ? (int) $package_totals['max_width_cm'] : 1,
-                'heightCm' => isset($package_totals['max_height_cm']) ? (int) $package_totals['max_height_cm'] : 1
+                'weightKg' => isset($package_totals['total_weight']) ?$package_totals['total_weight']  : 0
             )
         );
 
@@ -391,9 +388,6 @@ class Gomile_Shipment_Delivery_API {
         $contents = isset($package['contents']) && is_array($package['contents']) ? $package['contents'] : array();
         $subtotal = 0.0;
         $weight = 1.0;
-        $max_length = 1.0;
-        $max_width = 1.0;
-        $max_height = 1.0;
         $quantity = 0;
 
         foreach ($contents as $content) {
@@ -402,22 +396,7 @@ class Gomile_Shipment_Delivery_API {
             $product_weight = 0.0;
 
             if(!empty($content['data']) && is_object($content['data'])) {
-                $product_weight = method_exists($content['data'], 'get_weight') ? (float) $content['data']->get_weight() : 1.0;
-                $product_length = method_exists($content['data'], 'get_length') ? (float) $content['data']->get_length() : 1.0;
-                $product_width = method_exists($content['data'], 'get_width') ? (float) $content['data']->get_width() : 1.0;
-                $product_height = method_exists($content['data'], 'get_height') ? (float) $content['data']->get_height() : 1.0;
-
-                if ($product_length > $max_length) {
-                    $max_length = $product_length;
-                }
-
-                if ($product_width > $max_width) {
-                    $max_width = $product_width;
-                }
-
-                if ($product_height > $max_height) {
-                    $max_height = $product_height;
-                }
+                $product_weight = method_exists($content['data'], 'get_weight') ? (float) $content['data']->get_weight() : 0.0;
             }
 
             $subtotal += $line_total;
@@ -431,9 +410,6 @@ class Gomile_Shipment_Delivery_API {
             'cart_subtotal'   => $subtotal,
             'item_count'      => $quantity,
             'total_weight'    => $weight,
-            'max_length_cm'   => $max_length,
-            'max_width_cm'    => $max_width,
-            'max_height_cm'   => $max_height,
             'applied_coupons' => isset($package['applied_coupons']) ? array_values((array) $package['applied_coupons']) : array(),
         );
     }
@@ -447,7 +423,7 @@ class Gomile_Shipment_Delivery_API {
      */
     protected function extract_quote_price($body) {
 
-        $price = $body['estimatedPriceCents'];
+        $price = $body['deliveryFee'];
 
     
 
