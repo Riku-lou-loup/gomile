@@ -97,14 +97,7 @@ function gomile_shipment_shipping_init() {
                         'taxable' => __('Taxable', 'gomile-shipment'),
                         'none'    => _x('None', 'Tax status', 'gomile-shipment'),
                     ),
-                ),
-                'cost' => array(
-                    'title'             => __('Cost', 'gomile-shipment'),
-                    'type'              => 'price',
-                    'description'       => __('Flat cost shown to the customer for this delivery method. Used as a fallback when live API quotes are disabled or unavailable.', 'gomile-shipment'),
-                    'default'           => '5.99',
-                    'sanitize_callback' => array($this, 'sanitize_cost'),
-                ),
+                )
             );
         }
 
@@ -122,9 +115,8 @@ function gomile_shipment_shipping_init() {
             $cost = '' === $fallback_cost ? 0 : (float) wc_format_decimal($fallback_cost);
             $quote = null;
 
-            //if (class_exists('Gomile_Shipment_Admin_Settings') && Gomile_Shipment_Admin_Settings::is_live_rates_enabled()) {
-                $quote = gomile_shipment_get_delivery_quote($package, $this);
-            //}
+            
+            $quote = gomile_shipment_get_delivery_quote($package, $this);
 
             if (!is_wp_error($quote) && isset($quote['price']) && is_numeric($quote['price'])) {
                 $cost = (float) $quote['price'];
