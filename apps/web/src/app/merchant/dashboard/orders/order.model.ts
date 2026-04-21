@@ -4,10 +4,14 @@ import type {
   CreateOrderResponse as SharedCreateOrderResponse,
   GetOrderResponse as SharedGetOrderResponse,
   ListMerchantOrdersItem as SharedListMerchantOrdersItem,
+  OrderType as SharedOrderType,
+  PackageSize as SharedPackageSize,
   OrderStatus as SharedOrderStatus,
 } from "../../../../../../../shared/order-contracts";
 
 export type OrderStatus = SharedOrderStatus;
+export type OrderType = SharedOrderType;
+export type PackageSize = SharedPackageSize;
 export type Order = SharedGetOrderResponse;
 export type OrderListItem = SharedListMerchantOrdersItem;
 export type OrderRow = SharedListMerchantOrdersItem & {
@@ -33,8 +37,10 @@ export function formatOrderStatus(status: OrderStatus) {
   switch (status) {
     case "SEARCHING_DRIVER":
       return "Recherche livreur";
-    case "DRIVER_ACCEPTED":
+    case "DRIVER_ASSIGNED":
       return "Livreur assigne";
+    case "DRIVER_ACCEPTED":
+      return "Livreur accepte";
     case "PICKED_UP":
       return "Recuperee";
     case "DELIVERED":
@@ -63,7 +69,11 @@ export function getOrderStatusTone(status: OrderStatus) {
     return "warning";
   }
 
-  if (status === "DRIVER_ACCEPTED" || status === "PICKED_UP") {
+  if (
+    status === "DRIVER_ASSIGNED"
+    || status === "DRIVER_ACCEPTED"
+    || status === "PICKED_UP"
+  ) {
     return "success";
   }
 

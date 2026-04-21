@@ -4,11 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
 import { login, logout } from "@/lib/auth-client";
-import {
-  buildDashboardUsername,
-  setStoredMerchantId,
-  setStoredUsername,
-} from "@/lib/dashboard-session";
+import { primeMerchantSession } from "@/lib/merchant-session";
 
 export function useLogin() {
   const router = useRouter();
@@ -44,8 +40,7 @@ export function useLogin() {
         return;
       }
 
-      setStoredUsername(buildDashboardUsername(email));
-      setStoredMerchantId(session.user.id);
+      primeMerchantSession(session);
       setSuccess("Connexion reussie. Redirection vers votre dashboard...");
 
       startTransition(() => {
