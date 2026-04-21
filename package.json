@@ -6,6 +6,7 @@
     "node": ">=20 <24"
   },
   "scripts": {
+<<<<<<< HEAD
     "dev": "corepack pnpm -r --parallel dev",
     "build": "corepack pnpm -r build",
     "lint": "corepack pnpm -r lint",
@@ -13,5 +14,14 @@
     "mobile:start": "corepack pnpm --filter gomileapp start",
     "mobile:lan": "corepack pnpm --filter gomileapp start -- --lan",
     "mobile:tunnel": "corepack pnpm --filter gomileapp start -- --tunnel"
+=======
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "dependencies": {
+    "axios": "^1.13.6"
+>>>>>>> dev
   }
 }

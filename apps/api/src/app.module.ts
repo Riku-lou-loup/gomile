@@ -4,12 +4,30 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { KycModule } from './kyc/kyc.module';
+import { DeliveryPricingModule } from './delivery/delivery-pricing.module';
+import { RedisModule } from './redis/redis.module';
+import { StoreModule } from './store/store.module';
+import { OrderMerchantsModule } from './order/merchants/order-merchants.module'
+import { OrderLivreursModule } from './order/livreurs/order-livreurs.module'
+import { DriverMeModule } from './driver/driver-me.module'
+import { UploadModule } from './upload/upload.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // ← charge le .env
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
+    KycModule,
+    DeliveryPricingModule,
+    RedisModule,
+    StoreModule,
+    OrderLivreursModule,
+    OrderMerchantsModule,
+    DriverMeModule,
+    UploadModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

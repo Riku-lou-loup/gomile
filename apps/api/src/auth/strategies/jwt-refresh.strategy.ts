@@ -4,7 +4,8 @@ import { ExtractJwt, Strategy, StrategyOptionsWithRequest } from 'passport-jwt';
 import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtPayload } from '../auth.types';
-import { createApiError } from '../auth-errors';
+import { createApiError } from '../../common/api-error';
+import { AUTH_ERRORS } from '../auth-errors';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -28,7 +29,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
 
     if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException(createApiError('INVALID_REFRESH_TOKEN'));
+      throw new UnauthorizedException(createApiError('INVALID_REFRESH_TOKEN', AUTH_ERRORS));
     }
 
     return user;

@@ -26,7 +26,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { AuthenticatedUser, AuthResponse } from './auth.types';
 
-@ApiTags('auth')
+@ApiTags('[auth]')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -49,7 +49,7 @@ export class AuthController {
     return this.authService.registerDriver(dto);
   }
 
-  @ApiOperation({ summary: 'Log in with email and password' })
+  @ApiOperation({ summary: 'Log in with email and password', description: 'Returns access and refresh tokens. On the web platform, tokens are stored as httpOnly cookies by the BFF, the response body only contains the user object. Mobile clients receive tokens directly in the response body.' })
   @ApiBody({ type: LoginDto })
   @ApiOkResponse({ type: AuthResponseDto })
   @ApiUnauthorizedResponse({ description: 'Identifiants invalides' })
@@ -59,7 +59,7 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
-  @ApiOperation({ summary: 'Refresh access and refresh tokens' })
+  @ApiOperation({ summary: 'Refresh access and refresh tokens', description: 'On the web platform, the refresh token is read from an httpOnly cookie by the BFF — no Authorization header needed from the browser. Mobile clients must send the refresh token as a Bearer token.' })
   @ApiBearerAuth('refresh-token')
   @ApiOkResponse({ type: AuthResponseDto })
   @ApiUnauthorizedResponse({ description: 'Refresh token invalide' })
@@ -70,7 +70,7 @@ export class AuthController {
     return this.authService.refresh(user.id, user.email, user.role);
   }
 
-  @ApiOperation({ summary: 'Log out the current user' })
+  @ApiOperation({ summary: 'Log out the current user', description: 'On the web platform, the access token is read from an httpOnly cookie by the BFF and both cookies are cleared on response. Mobile clients must send the access token as a Bearer token.' })
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ type: LogoutResponseDto })
   @ApiUnauthorizedResponse({ description: 'Access token invalide' })
