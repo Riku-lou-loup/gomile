@@ -50,7 +50,7 @@ export const styles = {
   profileTriggerDark: "border-slate-700 bg-slate-900",
 
   profileAvatar:
-    "flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold transition",
+    "flex min-h-11 min-w-11 max-w-[9rem] items-center justify-center rounded-full px-3 text-xs font-bold transition sm:text-sm",
   profileAvatarLight: "bg-[#86ba2f] text-white hover:bg-[#79ab29]",
   profileAvatarDark: "bg-emerald-700 text-white hover:bg-emerald-600",
 

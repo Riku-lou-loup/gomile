@@ -14,9 +14,9 @@ import ApiKeysTable from "./api-keys-table";
 
 export default function MerchantApiKeysPage() {
   const {
+    avatarLabel,
     closeProfileMenu,
     handleLogout,
-    initials,
     isDarkMode,
     isLoggingOut,
     menuRef,
@@ -64,7 +64,7 @@ export default function MerchantApiKeysPage() {
             isDarkMode={isDarkMode}
             rightSlot={
               <ProfileSlot
-                initials={initials}
+                avatarLabel={avatarLabel}
                 isDarkMode={isDarkMode}
                 isLoggingOut={isLoggingOut}
                 menuItems={apiKeysMenuItems}

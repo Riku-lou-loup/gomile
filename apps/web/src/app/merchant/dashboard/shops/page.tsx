@@ -14,9 +14,9 @@ import StoresTable from "./stores-table";
 
 export default function MerchantShopsPage() {
   const {
+    avatarLabel,
     closeProfileMenu,
     handleLogout,
-    initials,
     isDarkMode,
     isLoggingOut,
     menuRef,
@@ -64,7 +64,7 @@ export default function MerchantShopsPage() {
             isDarkMode={isDarkMode}
             rightSlot={
               <ProfileSlot
-                initials={initials}
+                avatarLabel={avatarLabel}
                 isDarkMode={isDarkMode}
                 isLoggingOut={isLoggingOut}
                 menuItems={shopsMenuItems}

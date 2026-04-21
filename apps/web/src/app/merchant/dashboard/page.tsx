@@ -42,9 +42,9 @@ function SurfaceCard({
 
 export default function MerchantDashboardPage() {
   const {
+    avatarLabel,
     closeProfileMenu,
     handleLogout,
-    initials,
     isDarkMode,
     isLoggingOut,
     menuRef,
@@ -97,7 +97,7 @@ export default function MerchantDashboardPage() {
             isDarkMode={isDarkMode}
             rightSlot={
               <ProfileSlot
-                initials={initials}
+                avatarLabel={avatarLabel}
                 isDarkMode={isDarkMode}
                 isLoggingOut={isLoggingOut}
                 menuItems={overviewMenuItems}

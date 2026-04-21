@@ -14,9 +14,9 @@ import OrdersTable from "./orders-table";
 
 export default function MerchantOrdersPage() {
   const {
+    avatarLabel,
     closeProfileMenu,
     handleLogout,
-    initials,
     isDarkMode,
     isLoggingOut,
     menuRef,
@@ -64,7 +64,7 @@ export default function MerchantOrdersPage() {
             isDarkMode={isDarkMode}
             rightSlot={
               <ProfileSlot
-                initials={initials}
+                avatarLabel={avatarLabel}
                 isDarkMode={isDarkMode}
                 isLoggingOut={isLoggingOut}
                 menuItems={ordersMenuItems}

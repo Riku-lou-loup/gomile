@@ -7,7 +7,7 @@ import LogoutIcon from "@/components/ui/icons/LogoutIcon";
 import { cn, styles } from "./style";
 
 type ProfileSlotProps = {
-  initials: string;
+  avatarLabel: string;
   isDarkMode: boolean;
   isLoggingOut: boolean;
   menuItems: DashboardMenuItem[];
@@ -20,7 +20,7 @@ type ProfileSlotProps = {
 };
 
 export default function ProfileSlot({
-  initials,
+  avatarLabel,
   isDarkMode,
   isLoggingOut,
   menuItems,
@@ -53,9 +53,9 @@ export default function ProfileSlot({
             variant="span"
             Component="span"
             weight="bold"
-            className="!text-inherit"
+            className="max-w-full truncate !text-inherit"
           >
-            {initials}
+            {avatarLabel}
           </Typography>
         </button>
 

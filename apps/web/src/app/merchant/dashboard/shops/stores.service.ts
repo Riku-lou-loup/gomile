@@ -1,4 +1,3 @@
-import { refreshSession } from "@/lib/auth-client";
 import {
   createStore as createStoreRequest,
   deleteStore as deleteStoreRequest,
@@ -8,10 +7,7 @@ import {
   listStores as listStoresRequest,
   updateStore as updateStoreRequest,
 } from "@/lib/api-client";
-import {
-  getStoredMerchantId,
-  setStoredMerchantId,
-} from "@/lib/dashboard-session";
+import { getCurrentMerchantSession } from "@/lib/merchant-session";
 import type {
   CreateStoreInput,
   CreateStoreResult,
@@ -22,24 +18,8 @@ import type {
   UpdateStoreResult,
 } from "./store.model";
 
-function isMerchantRole(role: string) {
-  return role === "MERCHANT" || role === "ADMIN";
-}
-
 export async function resolveCurrentMerchantId(): Promise<string> {
-  const storedMerchantId = getStoredMerchantId();
-
-  if (storedMerchantId) {
-    return storedMerchantId;
-  }
-
-  const session = await refreshSession();
-
-  if (!isMerchantRole(session.user.role)) {
-    throw new Error("La session courante n'est pas un compte marchand.");
-  }
-
-  setStoredMerchantId(session.user.id);
+  const session = await getCurrentMerchantSession();
   return session.user.id;
 }
 
