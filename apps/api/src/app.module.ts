@@ -12,6 +12,7 @@ import { OrderMerchantsModule } from './order/merchants/order-merchants.module'
 import { OrderLivreursModule } from './order/livreurs/order-livreurs.module'
 import { DriverMeModule } from './driver/driver-me.module'
 import { UploadModule } from './upload/upload.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { UploadModule } from './upload/upload.module'
     OrderLivreursModule,
     OrderMerchantsModule,
     DriverMeModule,
-    UploadModule
+    UploadModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

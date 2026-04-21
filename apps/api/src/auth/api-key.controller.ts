@@ -35,7 +35,7 @@ import { Role } from '@prisma/client';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { AuthenticatedUser } from './auth.types';
 
-@ApiTags('api-keys')
+@ApiTags('[Web][api-keys]')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('merchants/:merchantId/api-keys')
@@ -48,7 +48,7 @@ export class ApiKeyController {
     @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
     @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
     @ApiNotFoundResponse({ description: 'Merchant or store not found' })
-    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Roles(Role.MERCHANT)
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async createApiKey(
@@ -70,7 +70,7 @@ export class ApiKeyController {
     @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
     @ApiForbiddenResponse({ description: 'Authenticated user does not own this merchant account' })
     @ApiNotFoundResponse({ description: 'Merchant not found' })
-    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Roles(Role.MERCHANT)
     @Get()
     @HttpCode(HttpStatus.OK)
     async listApiKeys(
@@ -85,7 +85,7 @@ export class ApiKeyController {
     @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
     @ApiForbiddenResponse({ description: 'Authenticated user does not own this API key' })
     @ApiNotFoundResponse({ description: 'API key not found' })
-    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Roles(Role.MERCHANT)
     @Get(':apiKeyId')
     @HttpCode(HttpStatus.OK)
     async getApiKey(
@@ -102,7 +102,7 @@ export class ApiKeyController {
     @ApiUnauthorizedResponse({ description: 'Invalid or missing JWT' })
     @ApiForbiddenResponse({ description: 'Authenticated user does not own this API key, or key is revoked' })
     @ApiNotFoundResponse({ description: 'API key not found' })
-    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Roles(Role.MERCHANT)
     @Patch(':apiKeyId')
     @HttpCode(HttpStatus.OK)
     async updateApiKey(
@@ -120,7 +120,7 @@ export class ApiKeyController {
     @ApiForbiddenResponse({ description: 'Authenticated user does not own this API key' })
     @ApiNotFoundResponse({ description: 'API key not found' })
     @ApiConflictResponse({ description: 'API key is already revoked' })
-    @Roles(Role.MERCHANT, Role.ADMIN)
+    @Roles(Role.MERCHANT)
     @Post(':apiKeyId/revoke')
     @HttpCode(HttpStatus.OK)
     async revokeApiKey(

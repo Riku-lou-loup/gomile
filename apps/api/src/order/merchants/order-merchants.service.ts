@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, GoneException, HttpException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { CreateOrderDto } from '../dto/create-order.dto'
 import { AuthenticatedUser } from '../../auth/auth.types'
@@ -15,11 +15,16 @@ import { ListMerchantOrdersResponseDto } from '../dto/list-merchant-orders-respo
 import { HandshakeType, OrderStatus } from '@prisma/client'
 import { CancelOrderResponseDto } from '../dto/cancel-order-response'
 import { randomInt } from 'crypto'
+import { OpenRouteService } from '../../delivery/openrouteservice.service'
+import { DeliveryPricingService } from '../../delivery/delivery-pricing.service'
 
 @Injectable()
 export class OrderService  {
-  constructor(private prisma: PrismaService) {
-  }
+  constructor(
+    private prisma: PrismaService,
+    private readonly openRouteService: OpenRouteService,
+    private readonly deliveryPricingService: DeliveryPricingService,
+  ) {}
   private handshakeTTL = 12 * 60 * 60 * 1000; // 12h for short deliveries, or maybe less 
   
   // Verify existant of the merchant
@@ -91,8 +96,23 @@ export class OrderService  {
     if (user && user.id !== merchantId) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
-    await this.existsStore(storeId);
+    const store = await this.existsStore(storeId);
     await this.verifyStoreOwnership(merchantId, storeId);
+
+    // geocode dropoff and compute route from store coordinates
+    const dropoff = await this.openRouteService.geocodeAddress(dto.dropOffAddress);
+    const route = await this.openRouteService.getDrivingRoute(
+      { latitude: store.latitude, longitude: store.longitude },
+      dropoff,
+    );
+
+    const { deliveryFee, reward, distanceKm } = this.deliveryPricingService.calculate({
+      distanceMeters: route.distanceMeters,
+      weightKg: dto.weight,
+      packageSize: dto.packageSize,
+    });
+
+
     const pickupCode = randomInt(0, 1000000).toString().padStart(6, '0');
     const deliveryCode = randomInt(0, 1000000).toString().padStart(6, '0');
     const expiresAt = new Date(Date.now() + this.handshakeTTL);
@@ -104,6 +124,13 @@ export class OrderService  {
         customerName: dto.customerName,
         customerPhone: dto.customerPhone,
         dropOffAddress: dto.dropOffAddress,
+        type: dto.type,
+        packageSize: dto.packageSize,
+        weight: dto.weight,
+        orderReference: dto.orderReference,
+        deliveryFee,
+        reward,
+        distanceKm,
         handshakes: {
           createMany: {
             data: [
@@ -114,21 +141,26 @@ export class OrderService  {
         },
       },
     });
+
     return {
       orderId: order.id,
-      pickupCode,
       deliveryCode,
+      deliveryFee,
+      distanceKm,
       message: ORDER_MESSAGE.ORDER_CREATED,
     };
   }
 
-  async getMerchantOrders(user: AuthenticatedUser, merchantId: string): Promise<ListMerchantOrdersResponseDto[]> {
+  async getMerchantOrders(user: AuthenticatedUser | null, merchantId: string, orderReference?: string): Promise<ListMerchantOrdersResponseDto[]> {
     await this.existsMerchant(merchantId)
-    if (user.id !== merchantId && user.role !== Role.ADMIN) {
+    if (user && ((user.id !== merchantId) || user.role !== Role.ADMIN)) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
     return await this.prisma.order.findMany({
-      where: { merchantId },
+      where: {
+        merchantId,
+        ...(orderReference && { orderReference }),
+      },
       select : {
         id: true,
         storeId: true,
@@ -136,7 +168,8 @@ export class OrderService  {
         customerName : true,
         dropOffAddress: true,
         createdAt : true,
-        driverId: true
+        driverId: true,
+        orderReference: true,
       },
       orderBy: { createdAt: 'desc' },
     }) as ListMerchantOrdersResponseDto[]
@@ -187,6 +220,75 @@ export class OrderService  {
       },
     });
     return {message: ORDER_MESSAGE.ORDER_CANCELLED}
+  }
+
+  // cancel by order reference, use for WooCommerce, Shopify or any other plugins that has its own order id
+  async cancelOrderByReference(merchantId: string, orderReference: string): Promise<CancelOrderResponseDto> {
+    await this.existsMerchant(merchantId);
+
+    const order = await this.prisma.order.findFirst({
+      where: { merchantId, orderReference },
+    });
+
+    if (!order) {
+      throw new NotFoundException(createApiError('ORDER_NOT_FOUND', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_CANCELLED', ORDER_ERRORS));
+    }
+
+    if (order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.DELIVERED) {
+      throw new ConflictException(createApiError('ORDER_ALREADY_PICKED_UP', ORDER_ERRORS));
+    }
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { status: OrderStatus.CANCELLED, cancelledAt: new Date() },
+    });
+
+    return { message: ORDER_MESSAGE.ORDER_CANCELLED };
+  }
+
+  async verifyPickup(storeId: string, code: string) {
+    await this.existsStore(storeId);
+    const handshake = await this.prisma.handshake.findFirst({
+      where: {
+        code,
+        type: HandshakeType.A,
+        verifiedAt: null,
+        expiresAt: { gt: new Date() },
+        order: { storeId },
+      },
+      include: { order: true },
+    });
+
+    if (!handshake) {
+      throw new NotFoundException(createApiError('HANDSHAKE_NOT_FOUND', ORDER_ERRORS));
+    }
+
+    if (handshake.remainingAttemps === 0) {
+      throw new HttpException(createApiError('HANDSHAKE_ATTEMPTS_PASSED', ORDER_ERRORS), 429);
+    }
+
+    if (handshake.order.status !== OrderStatus.DRIVER_ACCEPTED) {
+      throw new ConflictException(createApiError('ORDER_BAD_STATUS', ORDER_ERRORS));
+    }
+
+    const now = new Date();
+    await this.prisma.handshake.update({
+      where: { id: handshake.id },
+      data: { verifiedAt: now },
+    });
+
+    await this.prisma.order.update({
+      where: { id: handshake.orderId },
+      data: { status: OrderStatus.PICKED_UP, pickedUpAt: now },
+    });
+    return {
+      orderId: handshake.orderId,
+      message: ORDER_MESSAGE.ORDER_PICKED_UP
+    }
   }
 
   

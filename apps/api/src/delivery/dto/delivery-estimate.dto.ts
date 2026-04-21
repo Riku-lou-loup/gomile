@@ -1,11 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  ValidateNested,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsPositive, ValidateNested } from 'class-validator';
+import { PackageSize } from '@prisma/client';
 import { AddressInputDto } from './address-input.dto';
 
 export class DeliveryEstimateDto {
@@ -19,26 +15,14 @@ export class DeliveryEstimateDto {
   @Type(() => AddressInputDto)
   dropoffAddress: AddressInputDto;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Package weight in kg', example: 3.5, required: false })
   @IsNumber()
   @IsPositive()
-  weightGrams: number;
-
-  @ApiProperty({ required: false, example: 20 })
   @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  lengthCm?: number;
+  weightKg?: number;
 
-  @ApiProperty({ required: false, example: 10 })
+  @ApiProperty({ enum: PackageSize, required: false, default: PackageSize.MEDIUM })
+  @IsEnum(PackageSize)
   @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  widthCm?: number;
-
-  @ApiProperty({ required: false, example: 8 })
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  heightCm?: number;
+  packageSize?: PackageSize;
 }
