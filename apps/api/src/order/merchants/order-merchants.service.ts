@@ -153,7 +153,7 @@ export class OrderService  {
 
   async getMerchantOrders(user: AuthenticatedUser | null, merchantId: string, orderReference?: string): Promise<ListMerchantOrdersResponseDto[]> {
     await this.existsMerchant(merchantId)
-    if (user && ((user.id !== merchantId) || user.role !== Role.ADMIN)) {
+    if (user && user.id !== merchantId && user.role !== Role.ADMIN) {
       throw new ForbiddenException(createApiError('NOT_OWNER', ORDER_ERRORS));
     }
     return await this.prisma.order.findMany({
