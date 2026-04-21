@@ -109,6 +109,7 @@ class Gomile_Shipment_Delivery_API {
      * @return array<string,mixed>|WP_Error
      */
     public function create_delivery($order) {
+        
         return array();
     }
 
@@ -190,7 +191,7 @@ class Gomile_Shipment_Delivery_API {
             )
         );
 
-        return apply_filters('gomile_shipment_quote_payload', $payload, $package, $shipping_method);
+        return $payload;
     }
 
     /**
@@ -458,7 +459,7 @@ class Gomile_Shipment_Delivery_API {
     }
 
     /**
-     * @brief Cree une cle de cache stable pour un panier donne.
+     * @brief Cree une cle de cache pour un panier donne.
      *
      * @param $package Package WooCommerce.
      * @param $shipping_method Methode d'expedition courante.
