@@ -3,34 +3,51 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocumentType, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomUUID, randomBytes } from 'crypto';
+import { randomUUID, randomBytes, createHash, randomInt } from 'crypto';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
 import { RegisterDriverDto } from './dto/register-driver.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthResponse } from './auth.types';
 import { createApiError } from '../common/api-error';
 import { AUTH_MESSAGES } from './auth-messages';
 import { AUTH_ERRORS } from './auth-errors';
+import { EmailService } from '../emails/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+    private emailService: EmailService,
+  ) { }
+  // Return a hash of the pwd
+  private async hashPassword(pwd: string) {
+    return bcrypt.hash(pwd, 10);
+  }
+
+  private async hashToken(token: string): Promise<string> {
+    return createHash('sha256').update(token).digest('hex');
+  }
 
   async registerMerchant(dto: RegisterMerchantDto): Promise<AuthResponse> {
     await this.checkEmailAvailable(dto.email);
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await this.hashPassword(dto.password);
+
+    if (dto.phone) await this.checkPhoneAvailable(dto.phone);
 
     const user = await this.prisma.user.create({
       data: {
         email: dto.email.toLowerCase(),
+        phone: dto.phone ?? null,
         password: hashedPassword,
         role: Role.MERCHANT,
         merchant: {
@@ -45,7 +62,7 @@ export class AuthService {
   async registerDriver(dto: RegisterDriverDto): Promise<AuthResponse> {
     await this.checkEmailAvailable(dto.email);
     await this.checkPhoneAvailable(dto.phone);
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await this.hashPassword(dto.password);
     const gomileCode = await this.generateUniqueGomileCode();
 
     const user = await this.prisma.user.create({
@@ -98,11 +115,11 @@ export class AuthService {
   async login(dto: LoginDto): Promise<AuthResponse> {
     const user = this.isEmail(dto.identifier)
       ? await this.prisma.user.findUnique({
-          where: { email: dto.identifier.toLowerCase() },
-        })
+        where: { email: dto.identifier.toLowerCase() },
+      })
       : await this.prisma.user.findUnique({
-          where: { phone: dto.identifier },
-        });
+        where: { phone: dto.identifier },
+      });
 
     if (!user)
       throw new UnauthorizedException(createApiError('INVALID_CREDENTIALS', AUTH_ERRORS));
@@ -130,8 +147,122 @@ export class AuthService {
     return { message: AUTH_MESSAGES.LOGOUT_SUCCESS };
   }
 
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email.toLowerCase()
+      },
+    });
+
+    if (user) {
+      const otp = randomInt(0, 1_000_000).toString().padStart(6, '0');
+      const hash = await this.hashToken(otp);
+
+      // db stores hash of the token, token is valid for 1 hour
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: hash,
+          passwordResetExpiry: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      let displayName: string;
+
+      if (user.role === Role.MERCHANT) {
+        const merchant = await this.prisma.merchant.findUnique({
+          where: { userId: user.id }
+        });
+
+        if (!merchant?.name) {
+          throw new InternalServerErrorException(
+            createApiError('NAME_IS_NULL', AUTH_ERRORS)
+          );
+        }
+
+        displayName = merchant.name;
+
+      } else {
+        const driver = await this.prisma.driver.findUnique({
+          where: { userId: user.id }
+        });
+        if (!driver?.firstName) {
+          throw new InternalServerErrorException(createApiError('NAME_IS_NULL', AUTH_ERRORS))
+        }
+        displayName = driver.firstName;
+      }
+
+      this.emailService.sendPasswordReset(user.email, displayName, otp);
+    }
+
+    return { message: AUTH_MESSAGES.FORGOT_PASSWORD_SENT };
+  }
+
+  async verifyOtp(dto: VerifyOtpDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+
+    if (!user?.passwordResetToken || !user.passwordResetExpiry) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    if (user.passwordResetExpiry < new Date()) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    const hash = await this.hashToken(dto.otp);
+    if (hash !== user.passwordResetToken) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    const resetToken = randomBytes(32).toString('hex');
+    const resetTokenHash = await this.hashToken(resetToken);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: resetTokenHash,
+        passwordResetExpiry: new Date(Date.now() + 15 * 60 * 1000),
+      },
+    });
+
+    return { resetToken };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+
+    if (!user?.passwordResetToken || !user.passwordResetExpiry) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    if (user.passwordResetExpiry < new Date()) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    const hash = await this.hashToken(dto.resetToken);
+    if (hash !== user.passwordResetToken) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    const hashedPassword = await this.hashPassword(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpiry: null,
+      },
+    });
+
+    return { message: AUTH_MESSAGES.PASSWORD_RESET_SUCCESS };
+  }
+
   // Check if the string is an email
-  private isEmail(identifier: string):boolean {
+  private isEmail(identifier: string): boolean {
     return identifier.includes('@');
   }
   // Check if email is available
