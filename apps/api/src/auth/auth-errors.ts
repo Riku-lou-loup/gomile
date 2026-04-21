@@ -55,6 +55,14 @@ export const AUTH_ERRORS = {
     statusCode: 404,
     message: 'Driver not found',
   },
+  INVALID_RESET_TOKEN: {
+    statusCode: 400,
+    message: 'Invalid or expired reset code',
+  },
+  NAME_IS_NULL: {
+    statusCode: 500,
+    message: 'Names not exist for this user, suggesting backend error. Contact Khoa !'
+  }
 } as const;
 
 export type AuthApiErrorCode = keyof typeof AUTH_ERRORS;
