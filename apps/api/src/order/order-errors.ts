@@ -1,51 +1,51 @@
 export const ORDER_ERRORS  = {
   ORDER_NOT_FOUND : {
     statusCode: 404,
-    message: "Le commande cherche n'existe pas"
+    message: "Order not found"
   },
   NOT_OWNER : {
     statusCode: 403,
-    message : "Vous n'etes pas proprietaire de ce commande"
+    message: "You are not the owner of this order"
   },
   ORDER_ALREADY_PICKED_UP : {
     statusCode: 409,
-    message: "Commande déjà partie ou en cours de livraison, annulation impossible"
+    message: "Order already picked up or in delivery, cancellation is not possible"
   },
   ORDER_ALREADY_CANCELLED : {
     statusCode: 409,
-    message: "Commande déjà annulé"
+    message: "Order already cancelled"
   },
   ORDER_ALREADY_TAKEN : {
     statusCode: 409,
-    message: "Cette commande a deja ete acceptee par un autre livreur"
+    message: "This order has already been accepted by another driver"
   },
   ORDER_PICKUP_NO_LONGER_AVAILABLE : {
     statusCode: 409,
-    message: "Cette commande a deja collectee"
+    message: "This order has already been collected"
   },
   ORDER_ALREADY_DELIVERED :  {
     statusCode: 409,
-    message: "Cette commande a deja livree"
+    message: "This order has already been delivered"
   },
   ORDER_BAD_STATUS: {
     statusCode: 500, // This should not happen, if it does, Samir will buy me a tacos
-    message: "Etat de commande illegal"
+    message: "Illegal order state"
   },
   HANDSHAKE_NOT_FOUND : {
     statusCode: 500,
-    message: "Handshake non trouvable ?!"
+    message: "Handshake not found ?!"
   },
   HANDSHAKE_ATTEMPTS_PASSED: {
     statusCode: 429,
-    message: "Vous avez depasse le nombre de tentatives autorisees. Veuillez contacter votre fiable admin"
+    message: "Too many incorrect attempts. Please contact your admin"
   },
   HANDSHAKE_EXPIRED : {
     statusCode: 410, // GONE !!!!!! HANDSHAKE IS GONE
-    message: "Handshake has expired"
+    message: "Validation code has expired"
   },
   INCORRECT_HANDSHAKE_CODE : {
     statusCode: 401,
-    message: "Handshake OTP code incorrect"
+    message: "Incorrect validation code"
   }
 } as const;
 

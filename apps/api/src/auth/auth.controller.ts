@@ -26,7 +26,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { AuthenticatedUser, AuthResponse } from './auth.types';
 
-@ApiTags('auth')
+@ApiTags('[auth]')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}

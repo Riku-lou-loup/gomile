@@ -1,41 +1,36 @@
 import { Injectable } from '@nestjs/common';
+import { PackageSize } from '@prisma/client';
+import { ORDER_PRICING } from '../order/order-pricing.config';
 
 type PricingInput = {
   distanceMeters: number;
-  durationSeconds: number;
-  weightGrams: number;
+  weightKg?: number;
+  packageSize?: PackageSize;
+};
+
+type PricingResult = {
+  deliveryFee: number;
+  reward: number;
+  distanceKm: number;
 };
 
 @Injectable()
 export class DeliveryPricingService {
-  calculate(input: PricingInput) {
-    const baseFeeCents = 50; // base
-    const perStartedKmCents = 10; // per km
-    const maxDistanceMeters = 10000; // delivery limits at 10km
+  calculate(input: PricingInput): PricingResult {
+    // Price formula :
+    // (base_rate + distance * price_per_km) * (weight_multiplier) + surcharge_cost
+    // weight_multiplier and surcharge_cost base on order weight
+    const distanceKm = input.distanceMeters / 1000;
+    const multiplier = ORDER_PRICING.SIZE_MULTIPLIER[input.packageSize ?? PackageSize.MEDIUM];
+    const heavySurcharge = (input.weightKg ?? 0) > ORDER_PRICING.HEAVY_THRESHOLD_KG ? ORDER_PRICING.HEAVY_SURCHARGE : 0;
 
-    const extraKg = Math.max(0, input.weightGrams - 5000); // heavy parcels are thosee that weights more than 5kg
-    const heavyParcelSurchargeCents =
-      extraKg > 0 ? 30 + Math.ceil(extraKg / 1000) * 15 : 0; // 30 cents surcharge and 15 cents per extra kg
-
-    const serviceable = input.distanceMeters <= maxDistanceMeters;
-    const distanceFeeCents =
-      Math.ceil(input.distanceMeters / 1000) * perStartedKmCents;
-
-    const estimatedPriceCents = serviceable
-      ? baseFeeCents + distanceFeeCents + heavyParcelSurchargeCents
-      : 0;
+    const deliveryFee = parseFloat(((ORDER_PRICING.BASE_RATE + distanceKm * ORDER_PRICING.RATE_PER_KM) * multiplier + heavySurcharge).toFixed(2));
+    const reward = parseFloat((deliveryFee * ORDER_PRICING.DRIVER_SHARE).toFixed(2));
 
     return {
-      serviceable,
-      distanceMeters: Math.round(input.distanceMeters),
-      durationSeconds: Math.round(input.durationSeconds),
-      estimatedPriceCents,
-      currency: 'EUR',
-      breakdown: {
-        baseFeeCents,
-        distanceFeeCents,
-        heavyParcelSurchargeCents,
-      },
+      deliveryFee,
+      reward,
+      distanceKm: parseFloat(distanceKm.toFixed(2)),
     };
   }
 }
