@@ -226,7 +226,7 @@ class Gomile_Shipment_Delivery_API {
             'dropOffAddress' => $dropoff_address,
             'type'           => 'OTHER',
             'weight'         => $weight,
-            'orderReference' => (string) $order->get_order_number(),
+            'orderReference' => (string) $order->get_id(),
         );
     }
 
