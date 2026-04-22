@@ -175,8 +175,21 @@ class Gomile_Shipment_Delivery_API {
      * @param $delivery_id Identifiant de livraison cote API.
      * @return array<string,mixed>|WP_Error
      */
-    public function cancel_delivery($delivery_id) {
-        return array();
+    public function cancel_delivery($order_reference) {
+        $response  = $this->request(
+            'POST',
+            Gomile_Shipment_Admin_Settings::get_option('cancel_endpoint', '/plugin/orders/cancel'),
+            array(
+                'context' => array(
+                    'action' => 'cancel_delivery',
+                    'order_reference' => $order_reference,
+                ),
+                'query_args' => array(
+                    'orderReference' => $order_reference,
+                ),
+            )
+        );
+
     }
 
     /**
@@ -716,6 +729,6 @@ function gomile_shipment_get_delivery_status($delivery_id) {
  * @param $delivery_id Identifiant de livraison cote API.
  * @return array<string,mixed>|WP_Error
  */
-function gomile_shipment_cancel_delivery($delivery_id) {
-    return Gomile_Shipment_Delivery_API::instance()->cancel_delivery($delivery_id);
+function gomile_shipment_cancel_delivery($order_reference) {
+    return Gomile_Shipment_Delivery_API::instance()->cancel_delivery($order_reference);
 }

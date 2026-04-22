@@ -72,7 +72,7 @@ class Gomile_Shipment_Admin_Settings {
             'quote_cache_minutes' => 10,
             'create_endpoint'  => '/plugin/orders',
             'status_endpoint'  => '/deliveries/{delivery_id}',
-            'cancel_endpoint'  => '/deliveries/{delivery_id}/cancel',
+            'cancel_endpoint'  => '/plugin/orders/cancel',
             'timeout'          => 20,
             'auto_create'      => 'yes',
             'webhook_secret'   => '',

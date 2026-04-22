@@ -9,8 +9,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// creation de la livraison
 add_action('woocommerce_checkout_order_processed', 'gomile_shipment_handle_order', 10, 1);
 add_action('woocommerce_store_api_checkout_order_processed', 'gomile_shipment_handle_block_order', 10, 1);
+
+// annulation d'une livraison si la commande est annulee
+add_action('woocommerce_order_status_cancelled', 'gomile_shipment_cancel_delivery_on_order_cancelled', 10, 1);
 
 /**
  * @brief Point d'entree checkout classique.
@@ -192,4 +196,25 @@ function gomile_shipment_order_uses_method($order) {
     }
 
     return false;
+}
+
+
+function gomile_shipment_cancel_delivery_on_order_cancelled($order_id) {
+    $order = wc_get_order($order_id);
+
+    if (!$order) {
+        return;
+    }
+
+    if (!gomile_shipment_order_uses_method($order)) {
+        return;
+    }
+
+    $order_reference = (string) $order->get_order_number();
+
+    if ($order_reference === '') {
+        return;
+    }
+
+    gomile_shipment_cancel_delivery($order_reference);
 }
