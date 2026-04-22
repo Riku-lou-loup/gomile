@@ -16,11 +16,14 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthResponse } from './auth.types';
 import { createApiError } from '../common/api-error';
 import { AUTH_MESSAGES } from './auth-messages';
 import { AUTH_ERRORS } from './auth-errors';
 import { EmailService } from '../emails/email.service';
+
+const DEFAULT_APP_URL = "http://localhost:3001"
 
 @Injectable()
 export class AuthService {
@@ -30,12 +33,20 @@ export class AuthService {
     private emailService: EmailService,
   ) { }
   // Return a hash of the pwd
-  private async hashPassword(pwd: string) {
+  private hashPassword(pwd: string) {
     return bcrypt.hash(pwd, 10);
   }
 
-  private async hashToken(token: string): Promise<string> {
+  private hashToken(token: string) {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  // Generate a verification token that expires in 48h
+  private generateVerificationToken() {
+    const token = randomBytes(32).toString('hex');
+    const hash = this.hashToken(token);
+    const expiry = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    return { token, hash, expiry };
   }
 
   async registerMerchant(dto: RegisterMerchantDto): Promise<AuthResponse> {
@@ -44,17 +55,25 @@ export class AuthService {
 
     if (dto.phone) await this.checkPhoneAvailable(dto.phone);
 
+    const { token, hash, expiry } =  this.generateVerificationToken();
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email.toLowerCase(),
         phone: dto.phone ?? null,
         password: hashedPassword,
         role: Role.MERCHANT,
+        emailVerificationToken: hash,
+        emailVerificationExpiry: expiry,
         merchant: {
           create: { name: dto.name },
         },
       },
     });
+    
+    // Sending a verifying url to registrants
+    const verifyUrl = `${process.env.APP_URL ?? DEFAULT_APP_URL}/verify-email?token=${token}`;
+    this.emailService.sendVerificationEmail(user.email, dto.name, verifyUrl);
 
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
@@ -64,6 +83,7 @@ export class AuthService {
     await this.checkPhoneAvailable(dto.phone);
     const hashedPassword = await this.hashPassword(dto.password);
     const gomileCode = await this.generateUniqueGomileCode();
+    const { token, hash, expiry } = this.generateVerificationToken();
 
     const user = await this.prisma.user.create({
       data: {
@@ -71,6 +91,8 @@ export class AuthService {
         phone: dto.phone,
         password: hashedPassword,
         role: Role.DRIVER,
+        emailVerificationToken: hash,
+        emailVerificationExpiry: expiry,
         driver: {
           create: {
             firstName: dto.firstName,
@@ -109,6 +131,10 @@ export class AuthService {
       });
     }
 
+    // Just mike merchants, drivers should have their accounts email verified
+    const verifyUrl = `${process.env.APP_URL ?? DEFAULT_APP_URL}/verify-email?token=${token}`;
+    this.emailService.sendVerificationEmail(user.email, dto.firstName, verifyUrl);
+
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
@@ -128,6 +154,9 @@ export class AuthService {
     if (!passwordMatch)
       throw new UnauthorizedException(createApiError('INVALID_CREDENTIALS', AUTH_ERRORS));
 
+    if (!user.emailVerified)
+      throw new UnauthorizedException(createApiError('EMAIL_NOT_VERIFIED', AUTH_ERRORS));
+
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
 
@@ -146,6 +175,36 @@ export class AuthService {
     });
     return { message: AUTH_MESSAGES.LOGOUT_SUCCESS };
   }
+  
+  async verifyEmail(dto: VerifyEmailDto) {
+    const hash = this.hashToken(dto.token);
+    const user = await this.prisma.user.findFirst({
+      where: { emailVerificationToken: hash },
+    });
+
+    if (!user) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+    if (!user.emailVerificationExpiry) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    if (user.emailVerificationExpiry < new Date()) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+
+    // Remove email verification token and set status to verified, user can now login
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpiry: null,
+      },
+    });
+
+    return { message: AUTH_MESSAGES.EMAIL_VERIFIED };
+  }
 
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.prisma.user.findUnique({
@@ -156,7 +215,7 @@ export class AuthService {
 
     if (user) {
       const otp = randomInt(0, 1_000_000).toString().padStart(6, '0');
-      const hash = await this.hashToken(otp);
+      const hash = this.hashToken(otp);
 
       // db stores hash of the token, token is valid for 1 hour
       await this.prisma.user.update({
@@ -203,7 +262,10 @@ export class AuthService {
       where: { email: dto.email.toLowerCase() },
     });
 
-    if (!user?.passwordResetToken || !user.passwordResetExpiry) {
+    if (!user) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+    if (!user.passwordResetToken || !user.passwordResetExpiry) {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
@@ -211,14 +273,15 @@ export class AuthService {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
-    const hash = await this.hashToken(dto.otp);
+    const hash = this.hashToken(dto.otp);
     if (hash !== user.passwordResetToken) {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
     const resetToken = randomBytes(32).toString('hex');
-    const resetTokenHash = await this.hashToken(resetToken);
+    const resetTokenHash = this.hashToken(resetToken);
 
+    // Reset token expires after 15 minutes
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -235,7 +298,10 @@ export class AuthService {
       where: { email: dto.email.toLowerCase() },
     });
 
-    if (!user?.passwordResetToken || !user.passwordResetExpiry) {
+    if (!user) {
+      throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
+    }
+    if (!user.passwordResetToken || !user.passwordResetExpiry) {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
@@ -243,12 +309,14 @@ export class AuthService {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
-    const hash = await this.hashToken(dto.resetToken);
+    const hash = this.hashToken(dto.resetToken);
     if (hash !== user.passwordResetToken) {
       throw new BadRequestException(createApiError('INVALID_RESET_TOKEN', AUTH_ERRORS));
     }
 
     const hashedPassword = await this.hashPassword(dto.newPassword);
+    
+    // Remove password token and update password 
     await this.prisma.user.update({
       where: { id: user.id },
       data: {

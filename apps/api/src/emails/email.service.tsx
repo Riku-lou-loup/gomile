@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Resend } from "resend";
 import { ResetPasswordEmail } from "./reset-password";
+import { VerifyEmail } from "./verify-email";
 import { render } from "react-email";
 
 @Injectable()
@@ -17,7 +18,13 @@ export class EmailService {
     });
   }
 
+  async sendVerificationEmail(to: string, name: string, verifyUrl: string) {
+    const html = await render(<VerifyEmail email={to} name={name} verifyUrl={verifyUrl} />);
+    await this.resend.emails.send({
+      from: 'noreply@gomile.fr',
+      to,
+      subject: 'Verify your Gomile account',
+      html,
+    });
+  }
 }
-
-
-

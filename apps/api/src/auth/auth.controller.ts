@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get,
+  Query,
   Body,
   UseGuards,
   HttpCode,
@@ -22,6 +24,7 @@ import { RegisterMerchantDto } from './dto/register-merchant.dto';
 import { RegisterDriverDto } from './dto/register-driver.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthResponseDto, LogoutResponseDto } from './dto/auth-response.dto';
@@ -35,7 +38,7 @@ import type { AuthenticatedUser, AuthResponse } from './auth.types';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Register a merchant account' })
+  @ApiOperation({ summary: 'Register a merchant account. An email will be send to verify this account' })
   @ApiBody({ type: RegisterMerchantDto })
   @ApiCreatedResponse({ type: AuthResponseDto })
   @ApiConflictResponse({ description: 'Email déjà utilisé' })
@@ -44,7 +47,7 @@ export class AuthController {
     return this.authService.registerMerchant(dto);
   }
 
-  @ApiOperation({ summary: 'Register a driver account' })
+  @ApiOperation({ summary: 'Register a driver account. An email will be send to verify this account' })
   @ApiBody({ type: RegisterDriverDto })
   @ApiCreatedResponse({ type: AuthResponseDto })
   @ApiConflictResponse({ description: 'Email déjà utilisé' })
@@ -72,6 +75,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refresh(@CurrentUser() user: AuthenticatedUser): Promise<AuthResponse> {
     return this.authService.refresh(user.id, user.email, user.role);
+  }
+
+  @ApiOperation({ summary: 'Verify email address via token from email link', description: 'After registrating a user, an email containing an url with a token will be send to this user. Frontend must implement a page at /verify-email that reads the token query param, calls this endpoint and shows a confirmation message to the user' })
+  @ApiOkResponse({ description: 'Email verified successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid or expired token' })
+  @Get('verify-email')
+  @HttpCode(HttpStatus.OK)
+  verifyEmail(@Query() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
   }
 
   @ApiOperation({ summary: 'Request a password reset code' })
