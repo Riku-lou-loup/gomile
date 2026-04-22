@@ -73,7 +73,7 @@ export class AuthService {
     
     // Sending a verifying url to registrants
     const verifyUrl = `${process.env.APP_URL ?? DEFAULT_APP_URL}/verify-email?token=${token}`;
-    this.emailService.sendVerificationEmail(user.email, dto.name, verifyUrl);
+    await this.emailService.sendVerificationEmail(user.email, dto.name, verifyUrl);
 
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
@@ -131,9 +131,9 @@ export class AuthService {
       });
     }
 
-    // Just mike merchants, drivers should have their accounts email verified
+    // Just like merchants, drivers should have their accounts email verified
     const verifyUrl = `${process.env.APP_URL ?? DEFAULT_APP_URL}/verify-email?token=${token}`;
-    this.emailService.sendVerificationEmail(user.email, dto.firstName, verifyUrl);
+    await this.emailService.sendVerificationEmail(user.email, dto.firstName, verifyUrl);
 
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
@@ -154,8 +154,9 @@ export class AuthService {
     if (!passwordMatch)
       throw new UnauthorizedException(createApiError('INVALID_CREDENTIALS', AUTH_ERRORS));
 
-    if (!user.emailVerified)
-      throw new UnauthorizedException(createApiError('EMAIL_NOT_VERIFIED', AUTH_ERRORS));
+    // Disable temporary to fix domain issues
+    //if (!user.emailVerified)
+    //  throw new UnauthorizedException(createApiError('EMAIL_NOT_VERIFIED', AUTH_ERRORS));
 
     return this.generateAndSaveTokens(user.id, user.email, user.role);
   }
@@ -251,7 +252,7 @@ export class AuthService {
         displayName = driver.firstName;
       }
 
-      this.emailService.sendPasswordReset(user.email, displayName, otp);
+      await this.emailService.sendPasswordReset(user.email, displayName, otp);
     }
 
     return { message: AUTH_MESSAGES.FORGOT_PASSWORD_SENT };
