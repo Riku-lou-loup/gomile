@@ -11,8 +11,6 @@ if (!defined('ABSPATH')) {
 
 add_action('woocommerce_checkout_order_processed', 'gomile_shipment_handle_order', 10, 1);
 add_action('woocommerce_store_api_checkout_order_processed', 'gomile_shipment_handle_block_order', 10, 1);
-add_action('woocommerce_order_status_processing', 'gomile_shipment_maybe_dispatch_after_payment', 10, 1);
-add_action('woocommerce_order_status_completed', 'gomile_shipment_maybe_dispatch_after_payment', 10, 1);
 
 /**
  * @brief Point d'entree checkout classique.
@@ -22,9 +20,12 @@ add_action('woocommerce_order_status_completed', 'gomile_shipment_maybe_dispatch
  */
 function gomile_shipment_handle_order($order_id) {
     $order = wc_get_order($order_id);
-    if ($order) {
-        gomile_shipment_process_order($order, 'checkout');
+
+    if (!$order) {
+        return;
     }
+
+    gomile_shipment_process_order($order, 'checkout');
 }
 
 /**
@@ -34,28 +35,15 @@ function gomile_shipment_handle_order($order_id) {
  * @return void
  */
 function gomile_shipment_handle_block_order($order) {
-    if ($order instanceof WC_Order) {
-        gomile_shipment_process_order($order, 'store_api_checkout');
+    if (!$order instanceof WC_Order) {
+        return;
     }
+
+    gomile_shipment_process_order($order, 'store_api_checkout');
 }
 
 /**
- * @brief Retente la creation de livraison quand la commande passe a un etat paye.
- *
- * @param $order_id Identifiant de commande WooCommerce.
- * @return void
- */
-function gomile_shipment_maybe_dispatch_after_payment($order_id) {
-    $order = wc_get_order($order_id);
-
-    if ($order) {
-        gomile_shipment_process_order($order, 'order_status');
-    }
-}
-
-/**
- * @brief Initialise les metadonnees Gomile sur la commande et declenche la creation
- * de livraison si l'option automatique est active.
+ * @brief Initialise les metadonnees Gomile puis cree la commande cote API au checkout.
  *
  * @param $order Commande WooCommerce.
  * @param $trigger Origine de l'appel.
@@ -66,12 +54,16 @@ function gomile_shipment_process_order($order, $trigger = 'manual') {
         return;
     }
 
-    if (!$order->get_meta('_gomile_shipment_status')) {
+    if (!$order->get_meta('_gomile_shipment_status', true)) {
         $order->update_meta_data('_gomile_shipment_status', 'pending');
     }
 
-    if (!$order->get_meta('_gomile_shipment_delivery_id')) {
+    if (!$order->get_meta('_gomile_shipment_delivery_id', true)) {
         $order->update_meta_data('_gomile_shipment_delivery_id', '');
+    }
+
+    if (!$order->get_meta('_gomile_shipment_delivery_created', true)) {
+        $order->update_meta_data('_gomile_shipment_delivery_created', 'no');
     }
 
     $order->save();
@@ -84,7 +76,7 @@ function gomile_shipment_process_order($order, $trigger = 'manual') {
 }
 
 /**
- * @brief Cree effectivement la livraison cote API si elle n'existe pas deja.
+ * @brief Cree la commande Gomile si elle n'existe pas deja.
  *
  * @param $order Commande WooCommerce.
  * @param $trigger Origine de l'appel.
@@ -95,16 +87,16 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
         return;
     }
 
-    $already_created = 'yes' === (string) $order->get_meta('_gomile_shipment_delivery_created', true);
+    $already_created = (string) $order->get_meta('_gomile_shipment_delivery_created', true) === 'yes';
     $existing_delivery_id = (string) $order->get_meta('_gomile_shipment_delivery_id', true);
 
-    if ($already_created || '' !== $existing_delivery_id) {
+    if ($already_created || $existing_delivery_id !== '') {
         return;
     }
 
     $status = (string) $order->get_meta('_gomile_shipment_status', true);
 
-    if ('creating' === $status) {
+    if ($status === 'creating' ) {
         return;
     }
 
@@ -114,7 +106,7 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
         $order->update_meta_data('_gomile_shipment_status', 'configuration_missing');
         $order->update_meta_data('_gomile_shipment_delivery_created', 'no');
         $order->save();
-        $order->add_order_note(__('Gomile delivery was not created because the API is not configured yet.', 'gomile-shipment'));
+        $order->add_order_note(__('Gomile order was not created because the API is not configured yet.', 'gomile-shipment'));
         return;
     }
 
@@ -122,7 +114,7 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
     $order->delete_meta_data('_gomile_shipment_last_error');
     $order->save();
 
-    $response = $api->create_delivery($order);
+    $response = gomile_shipment_create_delivery($order);
 
     if (is_wp_error($response)) {
         $order->update_meta_data('_gomile_shipment_status', 'api_error');
@@ -132,7 +124,7 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
 
         $order->add_order_note(
             sprintf(
-                __('Gomile delivery creation failed during %1$s: %2$s', 'gomile-shipment'),
+                __('Gomile order creation failed during %1$s: %2$s', 'gomile-shipment'),
                 $trigger,
                 $response->get_error_message()
             )
@@ -142,8 +134,11 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
     }
 
     $delivery_id = isset($response['delivery_id']) ? (string) $response['delivery_id'] : '';
-    $delivery_status = isset($response['status']) ? sanitize_key($response['status']) : 'created';
+    $delivery_status = isset($response['status']) ? sanitize_key($response['status']) : 'searching_driver';
     $tracking_url = isset($response['tracking_url']) ? esc_url_raw($response['tracking_url']) : '';
+    $delivery_code = isset($response['delivery_code']) ? sanitize_text_field((string) $response['delivery_code']) : '';
+    $delivery_fee = isset($response['delivery_fee']) ? (float) $response['delivery_fee'] : null;
+    $distance_km = isset($response['distance_km']) ? (float) $response['distance_km'] : null;
 
     if ('' !== $delivery_id) {
         $order->update_meta_data('_gomile_shipment_delivery_id', $delivery_id);
@@ -154,18 +149,26 @@ function gomile_shipment_dispatch_delivery($order, $trigger = 'manual') {
     }
 
     $order->update_meta_data('_gomile_shipment_delivery_created', 'yes');
-    $order->update_meta_data('_gomile_shipment_status', $delivery_status ? $delivery_status : 'created');
+    $order->update_meta_data('_gomile_shipment_status', $delivery_status);
     $order->save();
 
     $note = sprintf(
-        __('Gomile delivery created during %1$s. Delivery ID: %2$s. Status: %3$s', 'gomile-shipment'),
+        __('Gomile order created during %1$s. API order ID: %2$s. Status: %3$s', 'gomile-shipment'),
         $trigger,
-        $delivery_id ? $delivery_id : __('not returned by API', 'gomile-shipment'),
-        $delivery_status ? $delivery_status : __('created', 'gomile-shipment')
+        $delivery_id !== '' ? $delivery_id : __('not returned by API', 'gomile-shipment'),
+        $delivery_status
     );
 
-    if ('' !== $tracking_url) {
-        $note .= ' ' . sprintf(__('Tracking URL: %s', 'gomile-shipment'), $tracking_url);
+    if ($delivery_code !== '') {
+        $note .= ' ' . sprintf(__('Delivery code: %s', 'gomile-shipment'), $delivery_code);
+    }
+
+    if ($delivery_fee !== null) {
+        $note .= ' ' . sprintf(__('Delivery fee: %s EUR', 'gomile-shipment'), wc_format_decimal($delivery_fee));
+    }
+
+    if ($distance_km !== null) {
+        $note .= ' ' . sprintf(__('Distance: %s km', 'gomile-shipment'), wc_format_decimal($distance_km));
     }
 
     $order->add_order_note($note);
@@ -183,7 +186,7 @@ function gomile_shipment_order_uses_method($order) {
     }
 
     foreach ($order->get_shipping_methods() as $shipping_item) {
-        if ('gomile_shipment' === $shipping_item->get_method_id()) {
+        if ($shipping_item->get_method_id() === 'gomile_shipment') {
             return true;
         }
     }

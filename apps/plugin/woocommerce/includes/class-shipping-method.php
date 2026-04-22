@@ -8,7 +8,12 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-
+/**
+ * @brief Point d'entree de la declaration de la methode d'expedition.
+ * WooCommerce execute ce code a chaque chargement de page, mais la classe de la
+ * methode n'est declaree que si WooCommerce est actif et que la classe n'existe pas deja.
+ * Cela permet d'eviter les erreurs fatales si le plugin est desactive ou si WooCommerce n'est pas actif.
+ */
 add_action('woocommerce_shipping_init', 'gomile_shipment_shipping_init');
 
 /**

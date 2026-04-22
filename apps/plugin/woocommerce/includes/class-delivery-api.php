@@ -109,8 +109,54 @@ class Gomile_Shipment_Delivery_API {
      * @return array<string,mixed>|WP_Error
      */
     public function create_delivery($order) {
-        
-        return array();
+        if (!$order instanceof WC_Order) {
+            return new WP_Error('gomile_invalid_order', __('The provided order is invalid.', 'gomile-shipment'));
+        }
+
+        $payload = $this->build_delivery_payload($order);
+
+        if (is_wp_error($payload)) {
+            return $payload;
+        }
+
+        $response = $this->request(
+            'POST',
+            Gomile_Shipment_Admin_Settings::get_option('create_endpoint', '/plugin/orders'),
+            array(
+                'body' => $payload,
+                'context' => array(
+                    'action' => 'create_delivery',
+                    'order_id' => $order->get_id(),
+                ),
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $body = isset($response['body']) ?$response['body'] : array();
+        $delivery_id = isset($body['orderId']) ? (string) $body['orderId'] : '';
+
+        if ($delivery_id === '') {
+            return new WP_Error(
+                'gomile_create_missing_order_id',
+                __('The create order response does not contain an orderId.', 'gomile-shipment'),
+                $body
+            );
+        }
+
+        return array(
+            'delivery_id'   => $delivery_id,
+            'status'        => isset($body['delivery_status']) ? (string) $body['delivery_status'] : 'searching_driver',
+            'tracking_url'  => isset($body['tracking_url']) ? esc_url_raw($body['tracking_url']) : '',
+            'delivery_code' => isset($body['deliveryCode']) ? (string) $body['deliveryCode'] : '',
+            'delivery_fee'  => isset($body['deliveryFee']) ? (float) $body['deliveryFee'] : null,
+            'distance_km'   => isset($body['distanceKm']) ? (float) $body['distanceKm'] : null,
+            'message'       => isset($body['message']) ? (string) $body['message'] : '',
+            'body'          => $body,
+            'status_code'   => $response['status_code'],
+        );
     }
 
     /**
@@ -137,10 +183,38 @@ class Gomile_Shipment_Delivery_API {
      * @brief Construit le payload envoye a l'endpoint de creation de livraison.
      *
      * @param $order Commande WooCommerce.
-     * @return array<string,mixed>
+     * @return array<string,mixed>|WP_Error
      */
     public function build_delivery_payload($order) {
-        return array();
+        if (!$order instanceof WC_Order) {
+            return new WP_Error('gomile_invalid_order', __('The provided order is invalid.', 'gomile-shipment'));
+        }
+
+        $customer_name = $this->get_order_customer_name($order);
+        $customer_phone = trim((string) $order->get_billing_phone());
+        $dropoff_address = $this->get_order_dropoff_address($order);
+        $weight = $this->get_order_total_weight($order);
+
+        if ($customer_name === '') {
+            return new WP_Error('gomile_missing_customer_name', __('The order does not contain a customer name.', 'gomile-shipment'));
+        }
+
+        if ($customer_phone === '') {
+            return new WP_Error('gomile_missing_customer_phone', __('The order does not contain a customer phone number.', 'gomile-shipment'));
+        }
+
+        if ($dropoff_address === '') {
+            return new WP_Error('gomile_missing_dropoff_address', __('The order does not contain a dropoff address.', 'gomile-shipment'));
+        }
+
+        return array(
+            'customerName'   => $customer_name,
+            'customerPhone'  => $customer_phone,
+            'dropOffAddress' => $dropoff_address,
+            'type'           => 'OTHER',
+            'weight'         => $weight,
+            'orderReference' => (string) $order->get_order_number(),
+        );
     }
 
     /**
@@ -414,6 +488,81 @@ class Gomile_Shipment_Delivery_API {
         );
     }
 
+    /**
+     * @brief Indique si la configuration minimale est presente pour appeler l'API.
+     *
+     * @return bool
+     */
+    public function is_configured() {
+        $base_url = trim((string) Gomile_Shipment_Admin_Settings::get_option('api_base_url', ''));
+        $api_key = trim((string) Gomile_Shipment_Admin_Settings::get_option('api_key', ''));
+
+        return '' !== $base_url && '' !== $api_key;
+    }
+
+    /**
+     * @brief Calcule le poids total de la commande, avec fallback pour conserver un devis coherent.
+     *
+     * @param $order Commande WooCommerce.
+     * @return float
+     */
+    protected function get_order_total_weight($order) {
+        $total_weight = 0.0;
+
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+
+            if (!$product || !method_exists($product, 'get_weight')) {
+                continue;
+            }
+
+            $quantity = (int) $item->get_quantity();
+            $weight = (float) $product->get_weight();
+            $total_weight += ($weight * $quantity);
+        }
+
+        return max(1.0, (float) $total_weight);
+    }
+
+    /**
+     * @brief Construit le nom client a partir des adresses WooCommerce.
+     *
+     * @param $order Commande WooCommerce.
+     * @return string
+     */
+    protected function get_order_customer_name($order) {
+        $shipping_name = trim($order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name());
+
+        if ($shipping_name !== '') {
+            return $shipping_name;
+        }
+
+        return trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
+    }
+
+    /**
+     * @brief Construit l'adresse de livraison en une chaine compatible avec l'API plugin/orders.
+     *
+     * @param $order Commande WooCommerce.
+     * @return string
+     */
+    protected function get_order_dropoff_address($order) {
+        $shipping = $order->get_address('shipping');
+        $billing = $order->get_address('billing');
+        $address = is_array($shipping) && array_filter($shipping) ? $shipping : $billing;
+
+        $parts = array_filter(array(
+            isset($address['address_1']) ? $address['address_1'] : '',
+            isset($address['address_2']) ? $address['address_2'] : '',
+            isset($address['postcode']) ? $address['postcode'] : '',
+            isset($address['city']) ? $address['city'] : '',
+            isset($address['state']) ? $address['state'] : '',
+            isset($address['country']) ? $address['country'] : '',
+        ));
+
+        return implode(', ', $parts);
+    }
+
 
     /**
      * @brief Extrait un prix depuis des formats de reponse encore non stabilises.
@@ -422,10 +571,7 @@ class Gomile_Shipment_Delivery_API {
      * @return float|null
      */
     protected function extract_quote_price($body) {
-
-        $price = $body['deliveryFee'];
-
-    
+        $price = isset($body['deliveryFee']) ? $body['deliveryFee'] : null;
 
         if (!is_numeric($price)) {
             return null;

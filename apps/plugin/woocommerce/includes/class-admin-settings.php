@@ -70,7 +70,7 @@ class Gomile_Shipment_Admin_Settings {
             'quote_endpoint'   => '/delivery-estimates',
             'quote_method'     => 'POST',
             'quote_cache_minutes' => 10,
-            'create_endpoint'  => '/orders',
+            'create_endpoint'  => '/plugin/orders',
             'status_endpoint'  => '/deliveries/{delivery_id}',
             'cancel_endpoint'  => '/deliveries/{delivery_id}/cancel',
             'timeout'          => 20,
