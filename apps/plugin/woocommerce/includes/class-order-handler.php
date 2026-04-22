@@ -210,7 +210,7 @@ function gomile_shipment_cancel_delivery_on_order_cancelled($order_id) {
         return;
     }
 
-    $order_reference = (string) $order->get_order_number();
+    $order_reference = (string) $order->get_id();
 
     if ($order_reference === '') {
         return;
