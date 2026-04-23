@@ -69,6 +69,12 @@ class Gomile_Shipment_REST_Endpoints {
             case 'delivery.status_changed':
                 self::handle_delivery_status_changed($payload);
                 break;
+            
+                case 'delivery.status_completed':
+                // Livraison terminée, on peut clôturer la commande
+                self::handle_delivery_completed($payload);
+                break;
+            
             default:
                 // Event non géré
                 return new WP_REST_Response(array('success' => false, 'message' => 'Event type not handled'), 400);
@@ -99,6 +105,24 @@ class Gomile_Shipment_REST_Endpoints {
             $order->update_meta_data('_gomile_shipment_status', $new_status);
             $order->update_meta_data('gomile_shipment_last_status_update', current_time('Y-m-d H:i:s'));
             $order->save();
+        }
+    }
+
+    protected static function handle_delivery_completed($payload) {
+
+        self::handle_delivery_status_changed($payload); // Met à jour le statut de livraison gomile
+
+        $reference = $payload['orderReference'];
+
+        $order = wc_get_order($reference);
+
+        if (!$order) {
+            return;
+        }
+
+        // Marquer la commande comme terminée au niveau de WooCommerce
+        if ($order->get_status() !== 'completed') {
+            $order->update_status('completed', __('Order marked as completed by Gomile webhook', 'gomile-shipment'));
         }
     }
 }
