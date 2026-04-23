@@ -675,7 +675,7 @@ class Gomile_Shipment_Delivery_API {
         $log_data = array(
             'message' => $message,
             'context' => $context,
-        );
+        );      
         $log_json = wp_json_encode($log_data);
 
         // Try WooCommerce logger first

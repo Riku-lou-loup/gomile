@@ -204,6 +204,15 @@ class Gomile_Shipment_Admin_Settings {
     }
 
     /**
+     * @brief Retourne le secret du webhook.
+     *
+     * @return string
+     */
+    public static function get_webhook_secret() {
+        return self::get_option('webhook_secret', '');
+    }
+
+    /**
      * @brief Retourne la capacite requise pour acceder a la page de reglages.
      *
      * @return string
@@ -419,7 +428,7 @@ class Gomile_Shipment_Admin_Settings {
             'gomile-shipment'
         );
 
-        add_settings_field(
+        add_settings_field( 
             'webhook_secret',
             __('Webhook Secret', 'gomile-shipment'),
             array(__CLASS__, 'render_text_field'),
@@ -549,7 +558,7 @@ class Gomile_Shipment_Admin_Settings {
     public static function render_webhook_section() {
         $webhook_url = self::get_webhook_url();
 
-        echo '<p>' . esc_html__('Use this URL in your API backend to push delivery status updates back into WooCommerce.', 'gomile-shipment') . '</p>';
+        echo '<p>' . esc_html__('Paste this URL in your Gomile panel to push delivery status updates back into WooCommerce.', 'gomile-shipment') . '</p>';
         echo '<p><code>' . esc_html($webhook_url) . '</code></p>';
     }
 
