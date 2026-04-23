@@ -102,7 +102,6 @@ class Gomile_Shipment_Admin_Settings {
             'cancel_endpoint'     => 'GOMILE_CANCEL_ENDPOINT',
             'timeout'             => 'GOMILE_TIMEOUT',
             'auto_create'         => 'GOMILE_AUTO_CREATE',
-            'webhook_secret'      => 'GOMILE_WEBHOOK_SECRET',
             'debug_mode'          => 'GOMILE_DEBUG_MODE',
         );
     }
