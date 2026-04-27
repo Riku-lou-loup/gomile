@@ -80,7 +80,7 @@ const columns: DynamicTableColumn<Driver>[] = [
   },
 ];
 
- export default function AdminDashboard() {
+ export default function DriversTable() {
    return (
     <>
     <Navigation/>
