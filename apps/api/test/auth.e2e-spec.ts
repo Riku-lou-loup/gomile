@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
-import {PrismaService} from "../src/prisma/prisma.service";
+import { PrismaService } from '../src/prisma/prisma.service';
 
 const jwtPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
 
@@ -16,6 +16,21 @@ interface AuthTokensResponse {
     role: string;
   };
 }
+
+const driverPayload = (email: string) => ({
+  email,
+  password: 'Password123!',
+  firstName: 'Riku',
+  lastName: 'le DRIVER',
+  avatarUrl: 'https://example.test/avatar/riku-driver.jpg',
+  gender: 'MALE',
+  phone: `+336${Date.now().toString().slice(-8)}`,
+  dateOfBirth: '2000-01-02',
+  address: '22 boulevard Clemenceau, 38000 Grenoble',
+  deliveryCity: 'Grenoble',
+  deliveryRadius: 10,
+  transportType: 'BIKE',
+});
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -104,76 +119,37 @@ describe('AuthController (e2e)', () => {
       .expect(HttpStatus.UNAUTHORIZED);
   });
 
-  // Test registration of a driver with kyc
-  it('registers a driver with kyc', async () => {
+  it('registers a driver', async () => {
     const email = `driver_${Date.now()}@test.local`;
 
     const res = await request(app.getHttpServer())
-        .post('/auth/register/driver')
-        .send({
-          email,
-          password: 'TacosDeLyon',
-          firstName: 'Riku',
-          lastName: 'le DRIVER',
-          avatarUrl: 'https://example.test/avatar/riku-driver.jpg',
-          gender: 'MALE',
-          phone: '0612345678',
-          documentUrl: 'https://example.test/kyc/riku-driver-id.jpg',
-          dateOfBirth: '2000-01-02',
-          address: '22 boulevard Clemenceau, 38100 Grenoble',
-        })
-        .expect(HttpStatus.CREATED);
+      .post('/auth/register/driver')
+      .send(driverPayload(email))
+      .expect(HttpStatus.CREATED);
 
-    expect(res.body.user.email).toBe(email);
-    expect(res.body.user.role).toBe('DRIVER');
+    const body = res.body as AuthTokensResponse;
+    expect(body.user.email).toBe(email);
+    expect(body.user.role).toBe('DRIVER');
 
-    const driver = await prisma.driver.findUnique(
-        {
-          where: {userId: res.body.user.id},
-          include: { kycSubmissions: true}
-        }
-    )
+    const driver = await prisma.driver.findUnique({
+      where: { userId: body.user.id },
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: body.user.id },
+    });
 
     expect(driver).not.toBeNull();
     expect(driver?.firstName).toBe('Riku');
     expect(driver?.lastName).toBe('le DRIVER');
-    expect(driver?.phone).toBe('0612345678');
-    expect(driver?.avatarUrl).toBe('https://example.test/avatar/riku-driver.jpg');
     expect(driver?.gender).toBe('MALE');
-    expect(driver?.address).toBe('22 boulevard Clemenceau, 38100 Grenoble');
-    expect(driver?.kycStatus).toBe('PENDING');
-
+    expect(driver?.address).toBe('22 boulevard Clemenceau, 38000 Grenoble');
+    expect(driver?.transportType).toBe('BIKE');
+    expect(driver?.kycStatus).toBe('NOT_SUBMITTED');
+    expect(driver?.gomileCode).toMatch(/^GM-[A-F0-9]{6}-\d{4}$/);
+    expect(user?.phone).not.toBeNull();
   });
 
-  it('registers a driver without kyc', async() => {
-    const email = `driver_${Date.now()}@test.local`;
-
-    const  res = await request(app.getHttpServer())
-        .post('/auth/register/driver')
-        .send({
-          email,
-          password: 'TacosDeLyon',
-          firstName: 'RikuSansPapier',
-          lastName: 'le DRIVER',
-          avatarUrl: 'https://example.test/avatar/riku-driver.jpg',
-          gender: 'MALE',
-          phone: '0612345678',
-          dateOfBirth: '2000-01-02',
-          address: '22 boulevard Clemenceau, 38100 Grenoble',
-        }).expect(HttpStatus.CREATED);
-      expect(res.body.user.email).toBe(email);
-      expect(res.body.user.role).toBe('DRIVER');
-      // no need to reverify if the fields are correct, just verify the state to be NOT SUBMITTED
-      const driver = await prisma.driver.findUnique(
-          {
-            where: {userId: res.body.user.id},
-            include: { kycSubmissions: true}
-          }
-      )
-      expect(driver).not.toBeNull();
-      expect(driver?.kycStatus).toBe('NOT_SUBMITTED');
-      expect(driver?.kycSubmissions).toHaveLength(0);
-    });
   // Test duplication email
   it('rejects duplicate email', async () => {
     const email = `dup_${Date.now()}@test.local`;
@@ -185,34 +161,55 @@ describe('AuthController (e2e)', () => {
 
     // Register once
     await request(app.getHttpServer())
-        .post('/auth/register/merchant')
-        .send(payload)
-        .expect(HttpStatus.CREATED);
+      .post('/auth/register/merchant')
+      .send(payload)
+      .expect(HttpStatus.CREATED);
 
     // Register twice should be rejected
     await request(app.getHttpServer())
-        .post('/auth/register/merchant')
-        .send(payload)
-        .expect(HttpStatus.CONFLICT);
+      .post('/auth/register/merchant')
+      .send(payload)
+      .expect(HttpStatus.CONFLICT);
   });
 
-  // Test login
-  it('logs in an existing user', async () => {
+  // Test login by email
+  it('logs in an existing user by email', async () => {
     const email = `login_${Date.now()}@test.local`;
     const password = 'TacosDeLyon';
 
     await request(app.getHttpServer())
-        .post('/auth/register/merchant')
-        .send({ email, password, name: 'Login Merchant' })
-        .expect(HttpStatus.CREATED);
+      .post('/auth/register/merchant')
+      .send({ email, password, name: 'Login Merchant' })
+      .expect(HttpStatus.CREATED);
 
     const res = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email, password })
-        .expect(HttpStatus.OK);
+      .post('/auth/login')
+      .send({ identifier: email, password })
+      .expect(HttpStatus.OK);
 
-    expect(res.body.user.email).toBe(email);
-    expect(res.body.user.role).toBe('MERCHANT');
+    const loginBody = res.body as AuthTokensResponse;
+    expect(loginBody.user.email).toBe(email);
+    expect(loginBody.user.role).toBe('MERCHANT');
+  });
+
+  // Test login by phone
+  it('logs in a driver by phone number', async () => {
+    const email = `phone_login_${Date.now()}@test.local`;
+    const phone = `+336${Date.now().toString().slice(-8)}`;
+
+    await request(app.getHttpServer())
+      .post('/auth/register/driver')
+      .send({ ...driverPayload(email), phone })
+      .expect(HttpStatus.CREATED);
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ identifier: phone, password: 'Password123!' })
+      .expect(HttpStatus.OK);
+
+    const phoneLoginBody = res.body as AuthTokensResponse;
+    expect(phoneLoginBody.user.email).toBe(email);
+    expect(phoneLoginBody.user.role).toBe('DRIVER');
   });
 
   // Test invalid password
@@ -221,13 +218,13 @@ describe('AuthController (e2e)', () => {
     const password = 'UnTacosEstBon';
 
     await request(app.getHttpServer())
-        .post('/auth/register/merchant')
-        .send({ email, password, name: 'MauvaisTacos Merchant' })
-        .expect(HttpStatus.CREATED);
+      .post('/auth/register/merchant')
+      .send({ email, password, name: 'MauvaisTacos Merchant' })
+      .expect(HttpStatus.CREATED);
 
     await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email, password: 'UnTacosMauvais' })
-        .expect(HttpStatus.UNAUTHORIZED);
+      .post('/auth/login')
+      .send({ identifier: email, password: 'UnTacosMauvais' })
+      .expect(HttpStatus.UNAUTHORIZED);
   });
 });

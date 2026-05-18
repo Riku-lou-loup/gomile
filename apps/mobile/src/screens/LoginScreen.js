@@ -1,203 +1,91 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  Text, 
-  KeyboardAvoidingView, 
-  Platform,
-  Alert 
-} from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import Header from '../components/Header';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert, Keyboard, TouchableOpacity } from 'react-native';
 import { login } from '../../lib/auth-client';
+import { registerDriverPushToken } from '../lib/push-notifications';
+import Header from '../components/Header';
+import GoMileInput from '../components/GoMileInput';
+import GoMileButton from '../components/GoMileButton';
+import { COLORS } from '../constants/theme';
+import ScreenWrapper from '../components/ScreenWrapper';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
+
+function AuthDivider() {
+  return (
+    <View style={styles.dividerContainer}>
+      <View style={styles.dividerLine} />
+      <Text style={styles.dividerText}>OU</Text>
+      <View style={styles.dividerLine} />
+    </View>
+  );
+}
 
 export default function LoginScreen({ navigation }) {
-  const [identifier, setIdentifier] = useState(''); // Email ou NumTel
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // const handleLogin = () => {
-  //   if (!identifier || !password) {
-  //     Alert.alert("Erreur", "Veuillez remplir tous les champs.");
-  //     return;
-  //   }
-    
-  //   navigation.replace('MainApp');
-  // };
-
   const handleLogin = async () => {
+    Keyboard.dismiss();
+    if (!identifier || !password) return Alert.alert("Erreur", "Remplissez tout.");
 
-    navigation.replace('MainApp');
-    // Validation simple
-    // if (!identifier || !password) {
-    //   Alert.alert("Erreur", "Veuillez remplir tous les champs.");
-    //   return;
-    // }
-    
-
-    // setIsLoading(true);
-
-    // try {
-    //   // 2. On appelle le backend avec les vraies données
-    //   const session = await login({ 
-    //     email: identifier, // On envoie l'identifiant comme email
-    //     password: password 
-    //   });
-
-    //   console.log("Session récupérée :", session);
-
-    //   // 3. Succès ! On redirige vers l'app principale
-    //   // Les jetons (tokens) sont déjà sauvegardés automatiquement par auth-client.ts
-    //   navigation.replace('MainApp');
-
-    // } catch (error) {
-    //   // 4. Gestion d'erreur propre
-    //   // Le fichier api-errors.ts nous permet d'avoir des messages clairs
-    //   Alert.alert("Échec de connexion", error.message);
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    setIsLoading(true);
+    try {
+      await login({ identifier, password });
+      registerDriverPushToken();
+      navigation.replace('MainApp');
+    } catch (error) {
+      Alert.alert("Erreur", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const startRegistration = () => {
-    // s'inscrire et devenir livreur : 
+  const handleGoToRegister = () => {
     navigation.navigate('RegisterStep1');
   };
 
+  const handleGoToForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
+  };
+
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <View style={styles.mainContainer}>
-        <Header title="BIENVENUE" />
-        
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.content}
-        >
-          <View style={styles.formCard}>
-            <Text style={styles.welcomeTitle}>Espace Livreur</Text>
-            
-            <Text style={styles.label}>Email ou Numéro de téléphone</Text>
-            <TextInput 
-              style={styles.input}
-              placeholder="votre@email.com ou 06..."
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+    <ScreenWrapper>
+      <Header title="BIENVENUE" />
 
-            <Text style={styles.label}>Mot de passe</Text>
-            <TextInput 
-              style={styles.input}
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={true}
-            />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.content}>
+        <View style={styles.card}>
+          <GoMileInput label="Email" value={identifier} onChangeText={setIdentifier} placeholder="votre@email.com"  keyboardType="email-address"/>
+          <GoMileInput label="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>SE CONNECTER</Text>
-            </TouchableOpacity>
+          <TouchableOpacity onPress={handleGoToForgotPassword} style={styles.forgotPasswordContainer}>
+            <Text style={styles.forgotPasswordText}>Mot de passe oublié?</Text>
+          </TouchableOpacity>
 
-            <View style={styles.divider}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>OU</Text>
-              <View style={styles.line} />
-            </View>
+          <GoMileButton title="SE CONNECTER" type="secondary" onPress={handleLogin} loading={isLoading} />
 
-            <TouchableOpacity style={styles.registerButton} onPress={startRegistration}>
-              <Text style={styles.registerButtonText}>DEVENIR LIVREUR GOMILE</Text>
-            </TouchableOpacity>
-          </View>
-          
-        </KeyboardAvoidingView>
-      </View>
-    </SafeAreaProvider>
+          <AuthDivider />
+
+          <GoMileButton title="DEVENIR LIVREUR" type="primary" outline onPress={handleGoToRegister} />
+        </View>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#F2F2F2',
+  content: { ...COMMON_STYLE_VALUES.flex1, justifyContent: 'center', padding: 20 },
+  card: { ...COMMON_STYLE_VALUES.cardSurface, padding: 25, borderRadius: 20, elevation: 5 },
+  dividerContainer: { ...COMMON_STYLE_VALUES.rowCenter, marginVertical: 20 },
+  dividerLine: {flex: 1, height: 1,backgroundColor: COLORS.border,},
+  dividerText: {paddingHorizontal: 10, color: COLORS.textLight || '#888', fontSize: 14, fontWeight: '600',},
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 15,
+    marginTop: -10,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  formCard: {
-    backgroundColor: '#FFF',
-    padding: 25,
-    borderRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1A3C5A',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  label: {
-    color: '#1A3C5A',
+  forgotPasswordText: {
+    color: COLORS.secondary || '#1E88E5',
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: '#FAFAFA',
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: '#1A3C5A',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 25,
-  },
-  loginButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 25,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#DDD',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#AAA',
-    fontWeight: 'bold',
-  },
-  registerButton: {
-    borderWidth: 2,
-    borderColor: '#8BC34A', // Vert GoMile
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  registerButtonText: {
-    color: '#8BC34A',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
 });

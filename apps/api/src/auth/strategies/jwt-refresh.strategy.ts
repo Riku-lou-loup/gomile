@@ -2,9 +2,15 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy, StrategyOptionsWithRequest } from 'passport-jwt';
 import { Request } from 'express';
+import { createHash } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { JwtPayload } from '../auth.types';
-import { createApiError } from '../auth-errors';
+import { createApiError } from '../../common/api-error';
+import { API_ERRORS } from '../../common/errors';
+
+function hashToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -27,10 +33,19 @@ export class JwtRefreshStrategy extends PassportStrategy(
       where: { id: payload.sub },
     });
 
-    if (!user || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException(createApiError('INVALID_REFRESH_TOKEN'));
+    if (
+      !refreshToken ||
+      !user ||
+      user.refreshToken !== hashToken(refreshToken)
+    ) {
+      throw new UnauthorizedException(
+        createApiError('INVALID_REFRESH_TOKEN', API_ERRORS),
+      );
     }
 
-    return user;
+    return {
+      ...user,
+      currentRefreshToken: refreshToken,
+    };
   }
 }

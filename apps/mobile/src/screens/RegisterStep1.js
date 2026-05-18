@@ -1,133 +1,137 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform 
-} from 'react-native';
+import { Alert, StyleSheet, Text } from 'react-native';
+
+import FormLayout from '../components/FormLayout';
+import SectionTitle from '../components/SectionTitle';
+import GoMileInput from '../components/GoMileInput';
+import DocPicker from '../components/DocPicker';
+import FormButtons from '../components/FormButtons';
+import { pickImageSource } from '../lib/media-picker';
+import { COLORS } from '../constants/theme';
 import { useRegistrationStore } from '../store/useRegistrationStore';
-import Header from '../components/Header';
 
 export default function RegisterStep1({ navigation }) {
-  const { 
-    updateField, 
-    nextStep, 
-    firstName, 
-    lastName, 
-    email, 
-    phone, 
-    birthDate, 
-    gender 
+  const {
+    updateField,
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    avatarUrl,
   } = useRegistrationStore();
 
+  const handlePickAvatar = async () => {
+    try {
+      const uri = await pickImageSource();
+      if (uri) {
+        updateField('avatarUrl', uri);
+      }
+    } catch (error) {
+      Alert.alert('Erreur', error.message || 'Impossible d’ouvrir le sélecteur.');
+    }
+  };
+
+  const handleNext = async () => {
+    if (!avatarUrl || !firstName || !lastName || !email || !password || !confirmPassword) {
+      Alert.alert('Champs manquants', 'Veuillez remplir toutes les informations avant de continuer.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Erreur', 'Le mot de passe et sa confirmation ne correspondent pas.');
+      return;
+    }
+
+    navigation.navigate('RegisterStep2Identity');
+  };
+
   return (
-    <View style={styles.container}>
-      <Header title="IDENTITÉ" />
+    <FormLayout title="IDENTITÉ" progress={20}>
+      <SectionTitle>Informations de base (1/3)</SectionTitle>
 
-      <View style={styles.progressBar}>
-        <View style={[styles.progressLine, { width: '25%' }]} />
-      </View>
+      <DocPicker
+        label="Photo de profil"
+        value={avatarUrl}
+        onPress={handlePickAvatar}
+        placeholderText="+ Ajouter une photo"
+        shape="circle"
+        isImage={true}
+      />
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>Informations personnelles (1/4)</Text>
+      <GoMileInput
+        label="Prénom"
+        value={firstName}
+        onChangeText={(v) => updateField('firstName', v)}
+        placeholder="Jean"
+        autoCapitalize="words"
+        containerStyle={styles.fullInput}
+      />
 
-          {/* PRÉNOM & NOM */}
-          <Text style={styles.label}>Prénom</Text>
-          <TextInput 
-            style={styles.input} 
-            value={firstName}
-            onChangeText={(v) => updateField('firstName', v)}
-            placeholder="Jean"
-          />
+      <GoMileInput
+        label="Nom"
+        value={lastName}
+        onChangeText={(v) => updateField('lastName', v)}
+        placeholder="Dupont"
+        autoCapitalize="words"
+        containerStyle={styles.fullInput}
+      />
 
-          <Text style={styles.label}>Nom</Text>
-          <TextInput 
-            style={styles.input} 
-            value={lastName}
-            onChangeText={(v) => updateField('lastName', v)}
-            placeholder="Dupont"
-          />
+      <GoMileInput
+        label="Email"
+        value={email}
+        onChangeText={(v) => updateField('email', v)}
+        keyboardType="email-address"
+        placeholder="nom@exemple.com"
+        containerStyle={styles.fullInput}
+      />
 
-          {/* DATE DE NAISSANCE (Clavier numérique pour faciliter) */}
-          <Text style={styles.label}>Date de naissance</Text>
-          <TextInput 
-            style={styles.input} 
-            value={birthDate}
-            onChangeText={(v) => updateField('birthDate', v)}
-            placeholder="JJ/MM/AAAA"
-            keyboardType="numbers-and-punctuation" 
-          />
+      <GoMileInput
+        label="Mot de passe"
+        value={password}
+        onChangeText={(v) => updateField('password', v)}
+        placeholder="••••••••••••••••"
+        containerStyle={styles.fullInput}
+      />
 
-          {/* GENRE (Sélecteur simple) */}
-          <Text style={styles.label}>Genre</Text>
-          <View style={styles.genderContainer}>
-            {['Homme', 'Femme', 'Autre'].map((item) => (
-              <TouchableOpacity 
-                key={item}
-                style={[styles.genderButton, gender === item && styles.genderButtonActive]}
-                onPress={() => updateField('gender', item)}
-              >
-                <Text style={[styles.genderText, gender === item && styles.genderTextActive]}>{item}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      <GoMileInput
+        label="Confirmation de Mot de passe"
+        value={confirmPassword}
+        onChangeText={(v) => updateField('confirmPassword', v)}
+        placeholder="••••••••••••••••"
+        containerStyle={styles.fullInput}
+      />
 
-          {/* CONTACT */}
-          <Text style={styles.label}>Email professionnel</Text>
-          <TextInput 
-            style={styles.input} 
-            value={email}
-            onChangeText={(v) => updateField('email', v)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="nom@exemple.com"
-          />
+      <Text style={styles.noteText}>
+        Le numéro de téléphone, la date de naissance et le genre seront demandés à l'étape suivante.
+      </Text>
 
-          <Text style={styles.label}>Numéro de téléphone</Text>
-          <TextInput 
-            style={styles.input} 
-            value={phone}
-            onChangeText={(v) => updateField('phone', v)}
-            keyboardType="phone-pad"
-            placeholder="06 12 34 56 78"
-          />
-
-          <TouchableOpacity 
-            style={styles.nextButton} 
-            onPress={() => navigation.navigate('RegisterStep2')}
-          >
-            <Text style={styles.nextButtonText}>CONTINUER</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+      <FormButtons
+        onBack={() => navigation.goBack()}
+        onNext={handleNext}
+      />
+    </FormLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F2' },
-  progressBar: { height: 6, backgroundColor: '#DDD' },
-  progressLine: { height: '100%', backgroundColor: '#8BC34A' },
-  scrollContent: { padding: 25, paddingBottom: 50 },
-  title: { fontSize: 20, fontWeight: '800', color: '#1A3C5A', marginBottom: 10 },
-  label: { color: '#1A3C5A', fontWeight: '600', marginBottom: 5, marginTop: 15 },
-  input: { borderWidth: 1, borderColor: '#DDD', padding: 12, borderRadius: 10, backgroundColor: '#FFF' },
-  
-  // Style pour le genre
-  genderContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
-  genderButton: { flex: 1, padding: 10, borderWidth: 1, borderColor: '#DDD', borderRadius: 10, alignItems: 'center', marginHorizontal: 2, backgroundColor: '#FFF' },
-  genderButtonActive: { backgroundColor: '#1A3C5A', borderColor: '#1A3C5A' },
-  genderText: { color: '#666', fontWeight: '600' },
-  genderTextActive: { color: '#FFF' },
-
-  nextButton: { backgroundColor: '#1A3C5A', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 35 },
-  nextButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
+  photoHint: {
+    marginTop: 4,
+    marginBottom: 15,
+    color: COLORS.textLight || '#666',
+    fontSize: 13,
+    textAlign: 'left',
+    lineHeight: 18,
+  },
+  fullInput: {
+    marginBottom: 15,
+  },
+  noteText: {
+    marginTop: 4,
+    marginBottom: 18,
+    color: COLORS.textLight || '#666',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
 });

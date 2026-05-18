@@ -1,88 +1,151 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
+
+import FormLayout from '../components/FormLayout';
+import SectionTitle from '../components/SectionTitle';
+import GoMileInput from '../components/GoMileInput';
+import GoMileButton from '../components/GoMileButton';
+import { Text } from 'react-native';
+
 import { useRegistrationStore } from '../store/useRegistrationStore';
-import Header from '../components/Header';
+import { COMMON_STYLE_VALUES } from '../styles/commonStyles';
+import { registerDriver } from '../../lib/auth-client';
+import { uploadLocalFileAnonymous } from '../../lib/upload-client';
+import { setCachedProfileAvatarUrl } from '../../lib/profile-cache';
+
+const FALLBACK_AVATAR_URL = 'https://placehold.co/512x512/png?text=GoMile';
 
 export default function RegisterStep4({ navigation }) {
-  const { updateField, siret, kbisFile, ribFile } = useRegistrationStore();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const pickDoc = async (field) => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (!result.canceled) updateField(field, result.assets[0].uri);
-  };
+  const {
+    updateField, siret,
+    firstName, lastName, email, phone, avatarUrl,
+    birthDate, gender, address, city, zipCode, street, deliveryCity, deliveryRadius, transportType,
+    password,
+  } = useRegistrationStore();
 
-  const handleFinish = () => {
-    // Ici, on enverra tout l'objet Zustand à ton API NestJS plus tard
-    Alert.alert(
-      "Dossier complet !",
-      "Tes informations ont été transmises à l'équipe GoMile pour validation.",
-      [{ text: "OK", onPress: () => navigation.navigate('Login') }]
-    );
-    navigation.replace('MainApp');
+  const handleFinish = async () => {
+    if (!email || !password || !firstName || !lastName || !phone || !birthDate || !gender) {
+      return Alert.alert('Erreur', 'Informations personnelles incomplètes.');
+    }
+    if (!address || !deliveryCity || !deliveryRadius || !transportType) {
+      return Alert.alert('Erreur', 'Informations transport incomplètes.');
+    }
+
+    setIsLoading(true);
+
+    try {
+      const safeDeliveryRadius = Number.parseInt(String(deliveryRadius), 10);
+      if (!Number.isFinite(safeDeliveryRadius) || safeDeliveryRadius < 1) {
+        throw new Error('Rayon de livraison invalide.');
+      }
+
+      const normalizePhone = (value) => {
+        const cleaned = String(value || '').replace(/\s+/g, '');
+        if (cleaned.startsWith('+')) return cleaned;
+        if (cleaned.startsWith('0') && cleaned.length === 10) return `+33${cleaned.slice(1)}`;
+        return cleaned;
+      };
+
+      const genderMap = { 'Homme': 'MALE', 'Femme': 'FEMALE', 'Autre': 'UNDEFINED' };
+      const vehicleMap = { velo: 'BIKE', moto: 'SCOOTER', voiture: 'CAR', utilitaire: 'TRUCK' };
+
+      const avatarUrlUploaded = avatarUrl
+        ? await uploadLocalFileAnonymous(avatarUrl, 'avatar.jpg').catch(() => undefined)
+        : undefined;
+
+      if (avatarUrlUploaded) setCachedProfileAvatarUrl(avatarUrlUploaded);
+
+      const signupData = {
+        email: String(email).trim().toLowerCase(),
+        password,
+        firstName: String(firstName).trim(),
+        lastName: String(lastName).trim(),
+        gender: genderMap[gender] || 'UNDEFINED',
+        phone: normalizePhone(phone),
+        dateOfBirth: birthDate,
+        avatarUrl: avatarUrlUploaded ?? FALLBACK_AVATAR_URL,
+        address: String(address).trim(),
+        city: city ? String(city).trim() : undefined,
+        zipCode: zipCode ? String(zipCode).trim() : undefined,
+        street: street ? String(street).trim() : undefined,
+        deliveryCity: String(deliveryCity).trim(),
+        deliveryRadius: safeDeliveryRadius,
+        transportType: vehicleMap[transportType] || 'BIKE',
+        siret: siret ? String(siret).trim() : undefined,
+      };
+
+      const cleanedSignupData = Object.fromEntries(
+        Object.entries(signupData).filter(([_, v]) => v !== undefined),
+      );
+
+      await registerDriver(cleanedSignupData);
+
+      // Les documents KYC se déposent depuis la page Profil après inscription.
+      navigation.replace('EmailVerification');
+
+    } catch (error) {
+      Alert.alert("Erreur d'inscription", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Header title="INFOS PRO" />
-      <View style={styles.progressBar}><View style={[styles.progressLine, { width: '100%' }]} /></View>
+    <FormLayout title="INFOS PRO" progress={100}>
+      <SectionTitle>Dernière étape (4/4)</SectionTitle>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Dernière étape (4/4)</Text>
+      <GoMileInput
+        label="Numéro SIRET (optionnel)"
+        placeholder="Ex: 123 456 789 00012"
+        value={siret}
+        onChangeText={(v) => updateField('siret', v)}
+        keyboardType="numeric"
+      />
 
-        <Text style={styles.label}>Numéro SIRET</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Ex: 123 456 789 00012"
-          value={siret}
-          onChangeText={(v) => updateField('siret', v)}
-          keyboardType="numeric"
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>
+          Tes documents KYC (pièce d'identité, permis, RIB…) se déposent depuis ton profil après l'inscription.
+        </Text>
+      </View>
+
+      <View style={styles.buttonRow}>
+        <GoMileButton
+          title="RETOUR"
+          type="secondary"
+          outline
+          style={{ flex: 1 }}
+          onPress={() => navigation.goBack()}
         />
-
-        <Text style={styles.label}>Extrait KBIS (ou déclaration auto-entrepreneur)</Text>
-        <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDoc('kbisFile')}>
-          <Text style={styles.uploadBtnText}>{kbisFile ? " KBIS Ajouté" : "Sélectionner le document"}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.label}>RIB (Pour tes futurs virements)</Text>
-        <TouchableOpacity style={styles.uploadBtn} onPress={() => pickDoc('ribFile')}>
-          <Text style={styles.uploadBtnText}>{ribFile ? " RIB Ajouté" : "Sélectionner le document"}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>
-            En cliquant sur Terminer, tu certifies l'exactitude des documents fournis.
-          </Text>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>RETOUR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>
-            <Text style={styles.finishButtonText}>TERMINER</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+        <GoMileButton
+          title="TERMINER"
+          type="secondary"
+          style={{ flex: 2 }}
+          loading={isLoading}
+          onPress={handleFinish}
+        />
+      </View>
+    </FormLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F2' },
-  progressBar: { height: 6, backgroundColor: '#DDD' },
-  progressLine: { height: '100%', backgroundColor: '#8BC34A' },
-  scrollContent: { padding: 25 },
-  title: { fontSize: 20, fontWeight: '800', color: '#1A3C5A' },
-  label: { color: '#1A3C5A', fontWeight: '600', marginBottom: 8, marginTop: 20 },
-  input: { borderWidth: 1, borderColor: '#DDD', padding: 15, borderRadius: 10, backgroundColor: '#FFF' },
-  uploadBtn: { padding: 15, borderRadius: 10, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#1A3C5A', borderStyle: 'dashed', alignItems: 'center' },
-  uploadBtnText: { color: '#1A3C5A', fontWeight: 'bold' },
-  infoBox: { marginTop: 20, padding: 15, backgroundColor: '#E3F2FD', borderRadius: 8 },
-  infoText: { color: '#1A3C5A', fontSize: 12, textAlign: 'center' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, marginBottom: 40 },
-  backButton: { flex: 1, padding: 16, alignItems: 'center' },
-  backButtonText: { color: '#666', fontWeight: 'bold' },
-  finishButton: { flex: 2, backgroundColor: '#8BC34A', padding: 16, borderRadius: 10, alignItems: 'center' },
-  finishButtonText: { color: '#FFF', fontWeight: 'bold' }
+  infoBox: {
+    marginTop: 10,
+    padding: 15,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+  },
+  infoText: {
+    ...COMMON_STYLE_VALUES.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  buttonRow: {
+    ...COMMON_STYLE_VALUES.rowCenter,
+    gap: 15,
+    marginTop: 30,
+    marginBottom: 20,
+  },
 });

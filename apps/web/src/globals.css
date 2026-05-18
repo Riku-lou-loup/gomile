@@ -4,6 +4,7 @@
 
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+@import "sweetalert2/dist/sweetalert2.min.css";
 
 
 
@@ -23,6 +24,19 @@
   --color-primary:        #0FB12A;   /* Vert foncé  — navbar, accents forts  */
   --color-primary-light:  #3D8B3D;   /* Vert moyen  — boutons, hover          */
   --color-primary-hover:  #2F6E2F;   /* Vert hover  — état hover des boutons  */
+
+  /* Vert (landing page) */
+  --color-primary-green:        #0FB12A;
+  --color-primary-green-dark:   #15803d;
+  --color-primary-green-light:  #dcfce7;
+  --color-primary-green-hover:  #2F6E2F;
+
+  /* Bleu (landing page) */
+  --color-primary-blue:        #0E1AC2;
+  --color-primary-blue-dark:   #0B0121;
+  --color-primary-blue-light:  #4AC5DE;
+  --color-primary-blue-hover:  #040D8C;
+
   --color-bg:             #EEF5EE;   /* Vert pâle   — fond de page            */
   --color-bg-card:        #FFFFCC;   /* Blanc       — fond des cartes         */
   --color-text:           #1A2E1A;   /* Vert très foncé — texte principal     */
@@ -30,6 +44,22 @@
   --color-border:         #C8DEC8;   /* Vert clair  — bordures, séparateurs   */
   --color-footer-bg:      #3B82F6;   /* Bleu clair — fond footer         */
   --color-footer-text:    #ffffff;   /* Vert pâle   — texte footer            */
+  --color-heading:        #020617;   /* Titres forts, remplace slate-950*/
+  --color-body:           #475569;   /* Texte descriptif, remplace slate-600 */
+  --color-body-strong:    #334155;   /* Texte courant plus soutenu, remplace slate-700 */
+  --color-link:           #075985;   /* Lien principal, remplace sky-800 */
+
+  --color-danger:         #b91c1c;   /* Texte d’erreur */
+  --color-danger-soft:    #fef2f2;   /* Fond message erreur */
+  --color-danger-border:  #fecaca;   /* Bordure message erreur */
+
+  --color-success:        #047857;   /* Texte de succès */
+  --color-success-soft:   #ecfdf5;   /* Fond message succès */
+  --color-success-border: #a7f3d0;   /* Bordure message succès */
+
+  --color-warning:        #f59e0b;   /* Texte d’avertissement */
+  --color-warning-soft:   #fff1cf;   /* Fond message avertissement */
+  --color-warning-text:   #9a5b00;   /* Bordure message avertissement */
 
   /* Typographie */
   --font-display: 'Roboto', sans-serif;   /* Titres uppercase bold  */
@@ -44,8 +74,10 @@
   --radius-btn:  0.5rem;
 
   /* Ombres */
-  --shadow-card: 0 4px 24px 0 rgba(43, 94, 43, 0.10);
-  --shadow-btn:  0 2px 8px 0 rgba(43, 94, 43, 0.20);
+  --shadow-card:       0 4px 24px 0 rgba(43, 94, 43, 0.10);
+  --shadow-card-hover: 0 8px 32px 0 rgba(43, 94, 43, 0.15);
+  --shadow-btn:        0 2px 8px 0 rgba(43, 94, 43, 0.20);
+  --shadow-btn-hover:  0 4px 12px 0 rgba(43, 94, 43, 0.30);
 }
 
 /* ─── Reset & base ─────────────────────────────────────── */
@@ -71,39 +103,302 @@ body {
   font-family: var(--font-body);
 }
 
-/* ─── Images ───────────────────────── */
+/* ─── Landing page utilities ────────────────────────────── */
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.full-container {
+  min-height: 100dvh;
+  gap: 20px;
+}
+
+.centered {
+  justify-content: center;
+  align-items: center;
+}
+
+.grid-3-cols {
+  @apply grid w-full grid-cols-1 items-stretch gap-10 md:grid-cols-2 xl:grid-cols-3;
+}
+
+.section-container {
+  @apply w-full py-16 sm:py-20 px-6 sm:px-8 lg:px-10;
+}
+
+.team-member {
+  @apply flex flex-col items-center gap-4;
+}
+
+.hero-container {
+  @apply w-full px-6 py-14 sm:px-8 sm:py-18 lg:px-10 lg:py-20;
+}
+
+.link {
+  @apply transition-colors duration-150 underline underline-offset-2;
+}
+
+.link:hover {
+  color: var(--color-primary-green);
+}
+
+/* ─── SweetAlert responsive system ─────────────────────── */
+
+.swal2-container {
+  z-index: 6000;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.swal2-popup {
+  width: min(92vw, 38rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, 0.86);
+  border-radius: clamp(1.1rem, 2.4vw, 1.8rem);
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
+}
+
+.swal2-icon {
+  width: clamp(3rem, 10vw, 5rem);
+  height: clamp(3rem, 10vw, 5rem);
+  margin: 0 auto clamp(0.75rem, 2vw, 1.2rem);
+}
+
+.swal2-title {
+  padding: 0;
+  color: #0f172a;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 4.3vw, 1.85rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.swal2-html-container {
+  max-height: min(52dvh, 32rem);
+  margin: clamp(0.75rem, 2vw, 1.1rem) 0 0;
+  overflow-y: auto;
+  color: #475569;
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 2.8vw, 1rem);
+  line-height: 1.55;
+}
+
+.swal2-html-container label,
+.swal2-html-container span {
+  letter-spacing: 0;
+}
+
+.swal2-input,
+.swal2-select,
+.swal2-textarea {
+  width: 100%;
+  min-height: clamp(3rem, 8.5vw, 3.75rem);
+  border: 2px solid rgba(51, 65, 85, 0.72);
+  border-radius: clamp(0.95rem, 2vw, 1.25rem);
+  color: #020617;
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 3vw, 1.05rem);
+  box-shadow: none;
+}
+
+.swal2-input:focus,
+.swal2-select:focus,
+.swal2-textarea:focus {
+  border-color: #7ebb2b;
+  box-shadow: 0 0 0 4px rgba(126, 187, 43, 0.16);
+}
+
+.swal2-textarea {
+  min-height: clamp(6rem, 22vw, 8rem);
+  resize: vertical;
+}
+
+.swal2-actions {
+  width: 100%;
+  gap: 0.75rem;
+  margin: clamp(1rem, 2.5vw, 1.35rem) 0 0;
+}
+
+.swal2-confirm,
+.swal2-cancel,
+.swal2-deny {
+  min-height: clamp(2.8rem, 8vw, 3.35rem);
+  border-radius: 999px;
+  padding: 0.75rem 1.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(0.86rem, 2.5vw, 0.98rem);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.swal2-confirm {
+  background: linear-gradient(180deg, #a7d84e 0%, #7ebb2b 100%) !important;
+  box-shadow: 0 14px 32px rgba(126, 187, 43, 0.32);
+}
+
+.swal2-cancel {
+  border: 1px solid #cbd5e1;
+  background: #ffffff !important;
+  color: #334155 !important;
+}
+
+.swal2-validation-message {
+  border-radius: 1rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: clamp(0.82rem, 2.6vw, 0.95rem);
+}
+
+html[style*="dark"] .swal2-popup {
+  border-color: rgba(51, 65, 85, 0.92);
+  background: rgba(15, 23, 42, 0.98);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+}
+
+html[style*="dark"] .swal2-title {
+  color: #f8fafc;
+}
+
+html[style*="dark"] .swal2-html-container {
+  color: #cbd5e1;
+}
+
+html[style*="dark"] .swal2-html-container label,
+html[style*="dark"] .swal2-html-container span {
+  color: #e2e8f0 !important;
+}
+
+html[style*="dark"] .swal2-input,
+html[style*="dark"] .swal2-select,
+html[style*="dark"] .swal2-textarea {
+  border-color: rgba(71, 85, 105, 0.95);
+  background: #020617;
+  color: #f8fafc;
+}
+
+html[style*="dark"] .swal2-cancel {
+  border-color: #475569;
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+@media (max-width: 480px) {
+  .swal2-container {
+    align-items: flex-end;
+    padding: 0.55rem;
+  }
+
+  .swal2-popup {
+    width: 100%;
+    max-height: calc(100dvh - 1.1rem);
+    border-radius: 1.35rem 1.35rem 1rem 1rem;
+    padding: 1rem;
+  }
+
+  .swal2-html-container {
+    max-height: 54dvh;
+  }
+
+  .swal2-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .swal2-actions button {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 1023px) {
+  .swal2-popup {
+    width: min(86vw, 40rem);
+  }
+
+  .swal2-html-container {
+    max-height: 58dvh;
+  }
+}
+
+@media (min-width: 1024px) {
+  .swal2-popup {
+    width: min(42rem, 88vw);
+  }
+
+  .swal2-html-container {
+    max-height: min(60dvh, 34rem);
+  }
+}
+
+@media (max-height: 640px) {
+  .swal2-popup {
+    max-height: calc(100dvh - 0.75rem);
+  }
+
+  .swal2-icon {
+    margin-bottom: 0.5rem;
+  }
+
+  .swal2-html-container {
+    max-height: 42dvh;
+  }
+}
+
+/* ─── Images - Map ───────────────────────── */
 
 .gomile-leaflet-map {
   height: 100%;
   width: 100%;
+  z-index: 0;
 }
 
 .gomile-leaflet-map.leaflet-container {
-  background: #dfe7d8;
+  background: var(--color-bg);
   font: inherit;
+  z-index: 0;
+}
+
+.gomile-leaflet-map .leaflet-pane,
+.gomile-leaflet-map .leaflet-top,
+.gomile-leaflet-map .leaflet-bottom {
+  z-index: 0;
 }
 
 .gomile-leaflet-map .leaflet-control-zoom {
   border: none;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow-card);
 }
 
 .gomile-leaflet-map .leaflet-control-zoom a {
   width: 2.35rem;
   height: 2.35rem;
   line-height: 2.2rem;
-  color: #16321a;
+  color: var(--color-text);
+  background: var(--color-bg-card);
 }
 
 .gomile-leaflet-map .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--color-bg-card) 88%, transparent);
   font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .gomile-leaflet-map .leaflet-popup-content-wrapper {
   border-radius: 1.15rem;
   padding: 0;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-card);
 }
 
 .gomile-leaflet-map .leaflet-popup-content {
@@ -111,19 +406,19 @@ body {
 }
 
 .gomile-leaflet-map .leaflet-popup-tip {
-  background: #ffffff;
+  background: var(--color-bg-card);
 }
 
 .gomile-leaflet-popup .leaflet-popup-close-button {
   right: 10px;
   top: 8px;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .gomile-map-popup {
   min-width: 14rem;
   padding: 1rem 1rem 0.95rem;
-  background: #ffffff;
+  background: var(--color-bg-card);
 }
 
 .gomile-map-popup__top {
@@ -137,7 +432,7 @@ body {
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-heading);
 }
 
 .gomile-map-popup__pill {
@@ -152,11 +447,26 @@ body {
   letter-spacing: 0.04em;
 }
 
+.gomile-map-popup__pill--green {
+  background: var(--color-bg);
+  color: var(--color-primary-hover);
+}
+
+.gomile-map-popup__pill--amber {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.gomile-map-popup__pill--red {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
 .gomile-map-popup__destination {
   margin-top: 0.8rem;
   font-size: 0.98rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-body-strong);
 }
 
 .gomile-map-popup__caption {
@@ -165,12 +475,12 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: var(--color-body);
 }
 
 .gomile-map-popup__eta {
   margin-top: 0.28rem;
   font-size: 0.96rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-heading);
 }

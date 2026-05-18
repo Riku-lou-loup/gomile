@@ -1,51 +1,32 @@
-// app/page.tsx
-import Button from "@/components/ui/design-system/button/button";
-import Footer from "@/components/ui/design-system/header_footer/footer";
+import HeroSection from "@/components/sections/HeroSection/HeroSection";
+import StepSection from "@/components/sections/StepSection/StepSection";
+import Card from "@/components/ui/design-system/cards/card";
+import FooterLP from "@/components/ui/design-system/header_footer/footerlp";
+import Title_ST from "@/components/ui/design-system/titre/title_st";
 import Container from "@/components/ui/elements/container";
-import {Navigation} from "@/components/ui/navigation/navigation";
-import Typography from "@/components/ui/design-system/typography";
-export default function HomePage() {
-  return (
-    <div className="flex flex-col h-screen w-full bg-cover bg-center" style={{ backgroundImage: "url('/images/bg.png')" }}>
-      <Navigation />
+import { Navigation } from "@/components/ui/navigation/navigation";
+import { BadgeEuro, Clock, Headphones, MapPin, Shield, Smartphone } from "lucide-react"
 
-      <main className="flex flex-1 flex-col p-6 items-center justify-center">
-
-        <div className="flex flex-col w-250 h-150 bg-bg-card mx-auto gap-3 items-center justify-center p-2 rounded-card shadow-lg border-2 border-gray-200">
-          
-          <Typography variant="h1" weight="bold" theme="black" className="text-center">Bienvenue sur GoMile</Typography>
-          
-          <div className="flex-1 flex gap-5 w-full">
-            
-            <Container className="flex-1 flex flex-col gap-2 items-center justify-center bg-white rounded-card shadow border-2 border-gray-200" fullwidth={true}>
-              <div className="flex flex-col">
-                <Typography variant="h4" weight="bold" theme="black" className="text-center">Je suis un commerçant</Typography>
-                <Typography variant="span" theme="black" className="text-center">Gérez vos livraisons en toute simplicité avec GoMile, votre partenaire de confiance pour une logistique efficace et sans stress.</Typography>
-              </div>
-              <div className="w-64 h-64 bg-cover bg-center" style={{ backgroundImage: "url('/images/commercant.png')" }}></div>
-              <Button variant="filled" size="md">Je m'inscris</Button>
-              <Button variant="filled" size="md" href="/client/login">Je me connecte</Button>
+export default function LandingPage() {
+    return (
+        <main>
+            <Navigation theme="landingpage"/>
+            <HeroSection/>
+            <Container size='full' Component="section" className="section-container" padding={false}>
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-14 lg:gap-16">
+                    <Title_ST title="Pourquoi choisir GoMile?" sub_title="Découvrez les avantages de notre service de livraison rapide et fiable."></Title_ST>
+                    <div className="grid-3-cols gap-8 lg:gap-10">
+                        <Card className="h-full min-h-56" icon={<Clock size={22} />} iconTheme="green" title="Livraison Express" description="Recevez vos colis en moins d'une heure."></Card>
+                        <Card className="h-full min-h-56" icon={<MapPin size={22} />} iconTheme="blue" title="Dessert toute la région" description="Recevez vos colis en moins d'une heure."></Card>
+                        <Card className="h-full min-h-56" icon={<Shield size={22} />} iconTheme="green" title="Protection" description="Recevez vos colis en moins d'une heure."></Card>
+                        <Card className="h-full min-h-56" icon={<Smartphone size={22} />} iconTheme="blue" title="Facilité d'utilisation" description="Recevez vos colis en moins d'une heure."></Card>
+                        <Card className="h-full min-h-56" icon={<BadgeEuro size={22} />} iconTheme="green" title="Tarifs pour tous" description="Choisissez l'abonnement qui vous correspond au mieux."></Card>
+                        <Card className="h-full min-h-56" icon={<Headphones size={22} />} iconTheme="blue" title="Service d'assistance" description="Recevez vos colis en moins d'une heure."></Card>
+                    </div>
+                </div>
             </Container>
-            
-            <Container className="flex-1 flex flex-col gap-2 items-center justify-center bg-white rounded-card shadow border-2 border-gray-200" fullwidth={true}>
-              <div className="flex flex-col">
-                <Typography variant="h4" weight="bold" theme="black" className="text-center">Je suis un livreur</Typography>
-                <Typography variant="span" theme="black" className="text-center">Devenez votre propre patron et livrez quand vous voulez</Typography>
-              </div>
-              <div className="w-64 h-64 bg-cover bg-center" style={{ backgroundImage: "url('/images/livreur.png')" }}></div>
-              <div className="flex w-full justify-center">
-                <Button variant="filled" size="md">Je m'inscris</Button>
-              </div>
-            </Container>
-          
-          </div>
-        
-        </div>
-      
-      </main>
-
-
-      <Footer />
-    </div>
-  );
+            <StepSection/>
+            <FooterLP/>
+        </main>
+    )
 }

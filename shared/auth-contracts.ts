@@ -11,10 +11,19 @@ export type Role = (typeof APP_ROLES)[number];
 export const APP_GENDERS = [
   'MALE',
   'FEMALE',
-    'UNDEFINED'
+  'UNDEFINED',
 ] as const;
 
 export type Gender = (typeof APP_GENDERS)[number];
+
+export const APP_VEHICLE_TYPES = [
+  'CAR',
+  'BIKE',
+  'SCOOTER',
+  'TRUCK',
+] as const;
+
+export type VehicleType = (typeof APP_VEHICLE_TYPES)[number];
 
 export interface AuthUser {
   id: string;
@@ -41,6 +50,7 @@ export interface RegisterMerchantInput {
   email: string;
   password: string;
   name: string;
+  phone?: string;
 }
 
 export interface RegisterDriverInput {
@@ -48,15 +58,31 @@ export interface RegisterDriverInput {
   password: string;
   firstName: string;
   lastName: string;
-  avatarUrl: string;
-  gender: Gender;
   phone: string;
-  documentUrl?: string; // optional, perhaps, user can submit kyc later
+  gender: Gender;
   dateOfBirth: string;
-  address: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  street?: string;
+  deliveryCity: string;
+  deliveryRadius: number;
+  transportType: VehicleType;
+  avatarUrl?: string;
+  cniFile?: string;
+  justificatifFile?: string;
+  permisFile?: string;
+  carteGriseFile?: string;
+  siret?: string;
+  kbisFile?: string;
+  ribFile?: string;
 }
 
 export interface LoginInput {
-  email: string;
+  identifier: string;
   password: string;
+}
+
+export interface WsTokenResponse {
+  wsToken: string;
 }
