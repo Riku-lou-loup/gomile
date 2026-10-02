@@ -1,217 +1,156 @@
-# GoMile Monorepo
+# GoMile
 
-GoMile est une plateforme logistique de livraison. Le dépôt contient :
+GoMile is a delivery platform built as an Ensimag group project. Merchants manage
+orders from a web dashboard, drivers follow their assignments in a mobile app,
+and a WooCommerce plugin connects online shops to the delivery API.
 
-- `apps/api` — backend NestJS (API REST + Prisma + Redis)
-- `apps/web` — dashboard Next.js pour marchands et administrateurs (App Router + BFF)
-- `apps/mobile` — application mobile Expo React Native pour livreurs et clients
-- `apps/plugin` — SDK TypeScript pour intégrations tierces (WooCommerce, Shopify)
-- `shared/` — contrats TypeScript partagés entre toutes les apps (types, erreurs)
-- `infra/` — services locaux Docker (PostgreSQL/PostGIS + Redis)
-- `docs/` — documents projet (`Cahier des charges.pdf`)
+The `portfolio-publication` branch preserves the original project history and
+commit authorship. Historical credentials have been redacted, and the environment
+templates contain no external service keys.
 
-## Structure du dépôt
+## Features
 
-```text
-.
-├── apps/
-│   ├── api/
-│   │   ├── src/
-│   │   ├── prisma/
-│   │   └── generated/prisma/
-│   ├── web/
-│   │   └── src/
-│   │       ├── app/
-│   │       └── lib/
-│   ├── mobile/
-│   │   └── lib/
-│   └── plugin/
-│       └── lib/
-├── shared/
-├── infra/
-│   └── docker-compose.yml
-└── docs/
-    └── Cahier des charges.pdf
+- **Merchants:** stores, delivery estimates, orders and store API keys.
+- **Drivers:** registration, document submission, assignments and delivery updates.
+- **Administration:** merchant and driver management, including document review.
+- **WooCommerce:** shipping estimates, order creation and signed status webhooks.
+- **Integrations:** transactional email, SMS, document uploads, subscriptions and
+  real-time status events.
+
+These describe the implemented modules, not measured production performance.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    W[Next.js dashboard] --> B[Next.js server routes]
+    B --> A[NestJS API]
+    M[Expo / React Native app] --> A
+    C[WooCommerce plugin] --> A
+    A --> P[(PostgreSQL / PostGIS)]
+    A --> R[(Redis)]
+    A --> X[Email, SMS, storage, routing and payments]
 ```
 
-## Prérequis
+| Directory | Responsibility | Main tools |
+| --- | --- | --- |
+| `apps/api` | API, authentication, orders and integrations | NestJS, Prisma, Redis, Socket.IO |
+| `apps/web` | Merchant/admin dashboard and server-side API proxy | Next.js, React, TypeScript |
+| `apps/mobile` | Mobile delivery workflows | Expo, React Native, TypeScript |
+| `apps/plugin/woocommerce` | WooCommerce shipping integration | PHP, WordPress/WooCommerce |
+| `apps/plugin/lib` | Delivery API client | TypeScript |
+| `shared` | Shared requests, responses, statuses and errors | TypeScript |
+| `infra` | Local infrastructure and deployment examples | Docker Compose, nginx, systemd |
 
-- Node.js 22 LTS
-- Docker + Docker Compose
+The API includes adapters for OpenRouteService, AWS S3, Resend, Twilio and Stripe.
 
-## Gestionnaire de paquets (Corepack + pnpm)
+## Local setup
 
-Le dépôt fixe la version de pnpm dans `package.json` (`packageManager`).
+### Requirements
+
+- Node.js 22; the workspace supports Node `>=20 <24`.
+- pnpm **10.30.3**, pinned in `package.json`.
+- Docker with Docker Compose for the local database and Redis.
+- An Expo-compatible development setup for mobile work.
+- PHP, Composer and WordPress/WooCommerce for plugin work.
+
+From the repository root, with Corepack available:
 
 ```bash
-# Active Corepack (une seule fois sur la machine)
 corepack enable
-
-# Active la version pnpm du projet
 corepack prepare pnpm@10.30.3 --activate
+pnpm install --frozen-lockfile
 ```
 
-## Installer les dépendances
+### Environment files
 
-```bash
-pnpm install
+In PowerShell:
+
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env.local
+Copy-Item apps/mobile/.env.example apps/mobile/.env
 ```
 
-## Démarrer l'infrastructure locale
+On Linux/macOS, use `cp` with the same paths. Edit the copies before starting:
+
+- Keep the local API on **4000** and the web app on **3001**.
+- Set two different random JWT secrets. Generate each with
+  `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
+- Supply your own provider configuration. Some API services validate it at
+  startup, including storage and payments. There is no complete offline demo mode.
+- On a physical phone, set `EXPO_PUBLIC_API_BASE_URL` to your computer's reachable
+  LAN address, such as `http://192.168.1.10:4000`. The phone's `localhost` refers
+  to the phone itself.
+
+External credentials are intentionally empty in the templates. The Docker
+database credentials are local development defaults. `NEXT_PUBLIC_` and
+`EXPO_PUBLIC_` variables are visible to clients and must never contain secrets.
+
+### Start the applications
+
+Run migrations against a fresh **local development database**:
 
 ```bash
 docker compose -f infra/docker-compose.yml up -d
-docker compose -f infra/docker-compose.yml ps
-```
-
-Services attendus :
-- PostgreSQL/PostGIS sur `localhost:5432`
-- Redis sur `localhost:6379`
-
-## Configuration d'environnement
-
-Copier les fichiers d'exemple et remplir les valeurs :
-
-```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env.local
-```
-
-### `apps/api/.env`
-
-```env
-# Base de données PostgreSQL (Docker local)
-DATABASE_URL="postgresql://gomile:gomile@localhost:5432/gomile?schema=public"
-
-# Cache / file de messages (Redis local)
-REDIS_URL="redis://localhost:6379"
-
-# Port d'écoute de l'API
-PORT=3000
-
-# Auth JWT (remplacer en environnements partagés)
-JWT_ACCESS_SECRET="change-me-access-secret"
-JWT_REFRESH_SECRET="change-me-refresh-secret"
-
-# OpenRouteService — geocoding + calcul de distance
-# Créer un compte gratuit sur openrouteservice.org (1000 appels/jour)
-ORS_API_KEY="your-openrouteservice-key"
-ORS_BASE_URL="https://api.openrouteservice.org"
-
-# AWS S3 — stockage des fichiers KYC
-# Créer un utilisateur IAM avec s3:PutObject, s3:GetObject, s3:DeleteObject sur le bucket
-AWS_REGION="your-chosen-region"
-AWS_ACCESS_KEY_ID="your-access-key-id"
-AWS_SECRET_ACCESS_KEY="your-secret-access-key"
-S3_BUCKET_NAME="your-bucket-name"
-
-# Resend — envoi d'emails transactionnels (vérification, reset mot de passe)
-# Créer un compte sur resend.com et générer une clé API
-RESEND_API_KEY="your-resend-api-key"
-
-```
-
-### `apps/web/.env.local`
-
-```env
-# URL du backend NestJS — utilisée côté serveur par le proxy BFF
-API_BASE_URL=http://localhost:3000
-
-```
-
-## Base de données API (Prisma)
-
-```bash
-# Génère le client Prisma
 pnpm --filter api exec prisma generate
-
-# Applique les migrations (à faire à chaque changement de schéma)
-pnpm --filter api exec prisma migrate dev --name <nom_migration>
+pnpm --filter api exec prisma migrate deploy
 ```
 
-Fichiers concernés :
-- Schéma : `apps/api/prisma/schema.prisma`
-- Migrations : `apps/api/prisma/migrations/*`
-- Client généré : `apps/api/generated/prisma/*`
-
-## Lancer les applications
-
-Depuis la racine du dépôt :
+Then start each application in its own terminal:
 
 ```bash
-# API NestJS (dev)
 pnpm --filter api start:dev
-
-# Web Next.js (dev) — port 3001 pour éviter le conflit avec l'API
-pnpm --filter web dev -- --port 3001
-
-# Mobile Expo
-pnpm --filter mobile start
+pnpm --filter web dev
+pnpm --filter gomileapp start
 ```
 
-## Scripts du workspace racine
+With the example configuration: web at `http://localhost:3001`, API at
+`http://localhost:4000`, Swagger at `http://localhost:4000/docs`.
+
+## Tests and code checks
+
+The project includes API unit/integration tests, mobile unit tests, Cypress web
+tests and PHPUnit plugin tests. Useful commands:
 
 ```bash
-pnpm build
-pnpm lint
-pnpm typecheck
+pnpm --filter api test:ci -- --runInBand
+pnpm --filter gomileapp test -- --runInBand
+pnpm --filter web typecheck
+pnpm --filter web test:front
 ```
 
-## Shared — contrats partagés
+For the WooCommerce plugin, run `composer install` then `composer test` in
+`apps/plugin/woocommerce`. API integration tests need a dedicated test database;
+browser tests need the corresponding application running. Do not point tests at
+the deployed application or production database.
 
-Le dossier `shared/` contient les types et constantes utilisés par toutes les apps :
+Publication checks covered commit authorship, historical secret removal,
+environment templates and the README. A complete application test run was not performed for this upload; test
+files alone do not establish that every test passes.
 
-| Fichier | Contenu |
-|---------|---------|
-| `api-errors.ts` | Codes d'erreur API, type `ApiErrorCode`, fonction `createApiError()` |
-| `auth-contracts.ts` | Types auth : rôles, genres, véhicules, `AuthUser`, `AuthSession`, inputs register/login |
-| `auth-messages.ts` | Constantes de messages d'authentification |
-| `order-contracts.ts` | Statuts de commande, types `CreateOrderInput`, `GetOrderResponse`, etc. |
-| `store-contracts.ts` | Types `CreateStoreInput`, `StoreResponse`, `StoreProvider` |
-| `api-key-contracts.ts` | Types `CreateApiKeyInput`, `ListApiKeysItem`, `GetApiKeyResponse`, etc. |
-| `kyc-contracts.ts` | Types `DriverKycStatus`, `DriverKycSubmission`, `RejectKycInput` |
-| `delivery-contracts.ts` | Types `DeliveryEstimateInput`, `DeliveryEstimateResponse` (utilisés par le plugin) |
+## Documentation
 
-## Routes BFF exposées côté web
+- [Mobile development](apps/mobile/README.md)
+- [Mobile/backend integration](apps/mobile/README.backend-api.md)
+- [WooCommerce plugin](apps/plugin/woocommerce/README.md)
+- [Deployment examples](infra/SETUP.md): adapt paths, users and configuration
+  before use.
 
-Le proxy BFF (`apps/web/src/lib/backend-proxy.ts`) gère l'authentification par cookie httpOnly côté serveur. Les routes suivantes sont exposées à `/api/` et proxifiées vers NestJS :
+Historical PDF reports, report screenshots and draft design images remain with
+the original project and are excluded from the public history.
 
-**Auth**
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `POST /api/auth/refresh`
-- `POST /api/auth/register/merchant`
-- `POST /api/auth/register/driver`
+## Team and provenance
 
-**Marchands — commandes**
-- `GET  /api/merchants/[merchantId]/orders`
-- `GET  /api/merchants/[merchantId]/orders/[orderId]`
-- `POST /api/merchants/[merchantId]/orders/[orderId]/cancel`
+Developed as a group project at Grenoble INP – Ensimag by:
 
-**Marchands — stores**
-- `GET    /api/merchants/[merchantId]/stores`
-- `POST   /api/merchants/[merchantId]/stores`
-- `GET    /api/merchants/[merchantId]/stores/[storeId]`
-- `PATCH  /api/merchants/[merchantId]/stores/[storeId]`
-- `DELETE /api/merchants/[merchantId]/stores/[storeId]`
-- `POST   /api/merchants/[merchantId]/stores/[storeId]/enable`
-- `POST   /api/merchants/[merchantId]/stores/[storeId]/disable`
-- `POST   /api/merchants/[merchantId]/stores/[storeId]/orders`
+- Duong Dang Khoa Dang
+- Alpha Ousmane Diakite
+- Youssef Jouini
+- Samir Maoude
+- Safwane Oudrhiri Idrissi
 
-**Marchands — clés API**
-- `GET   /api/merchants/[merchantId]/api-keys`
-- `POST  /api/merchants/[merchantId]/api-keys`
-- `GET   /api/merchants/[merchantId]/api-keys/[apiKeyId]`
-- `PATCH /api/merchants/[merchantId]/api-keys/[apiKeyId]`
-- `POST  /api/merchants/[merchantId]/api-keys/[apiKeyId]/revoke`
-
-**Livreurs**
-- `GET  /api/livreurs/[driverId]/orders`
-- `POST /api/livreurs/[driverId]/orders/[orderId]/accept`
-- `POST /api/livreurs/[driverId]/orders/[orderId]/pickup`
-- `POST /api/livreurs/[driverId]/orders/[orderId]/deliver`
-- `PUT  /api/livreurs/[driverId]/kyc-approve`
-- `PUT  /api/livreurs/[driverId]/kyc-reject`
-
-**Santé**
-- `GET /api/health`
+The original commits retain their author and committer identities and dates.
+Credential removal changes affected commit IDs; the setup guide and safe
+templates are added in a separate publication commit. The original GitLab
+repository and running Raspberry Pi checkout remain unchanged.

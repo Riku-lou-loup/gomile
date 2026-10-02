@@ -42,17 +42,12 @@ Thumbs.db
 
 # Local planning/state files
 local/
-pnpm-lock.yaml
-apps/api/prisma/migrations/migration_lock.toml
-pnpm-lock.yaml
-pnpm-lock.yaml
 package-lock.json
 apps/api/requests.http
 apps/api/gomile-api-dev_accessKeys.csv
 apps/plugin/woocommerce/docs/*
 !apps/plugin/woocommerce/docs/.gitkeep
 apps/plugin/woocommerce/gomile-shipment
-apps/api/prisma/migrations/20260421233442_add_password_reset_fields/migration.sql
 infra/wordpress/*
 infra/wordpress/site/
 infra/wordpress/dist/
@@ -61,4 +56,19 @@ test-webhook.sh
 apps/plugin/woocommerce/diagrammes/*
 docs/diagrammes/*
 apps/plugin/woocommerce/DIAGRAMMES-SEQUENCE.md
-apps/plugin/woocommerce/composer.lock
+
+# Local editor/agent state and generated report files
+.claude/
+.nvimlog
+*.synctex.gz
+
+# Historical reports, screenshots and draft designs are excluded from this publication.
+docs/*.pdf
+docs/src-latex/
+design/
+Designe/
+
+# Empty historical placeholder directories
+bin/a_supprimer.txt
+lib/a_supprimer.txt
+test/a_supprimer.txt
